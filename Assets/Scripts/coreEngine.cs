@@ -6,7 +6,7 @@ public class coreEngine : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+    Debug.Log("Hi");		
 	}
 	
 	// Update is called once per frame
