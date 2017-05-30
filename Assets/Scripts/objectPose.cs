@@ -135,31 +135,86 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to convert rotation and translation into projection matrix.
         /// TODO
+        /// Done Alexa
         /// </summary>
         private Matrix4x4 getProjectionMatrixFromRT( Vector3 r, Vector3 t )
         {
+            Matrix4x4 outR = getRotationMatrixFromMRP( r );
+            Matrix4x4 M = new Matrix4x4();
 
-            return new Matrix4x4();
+            M.m00 = outR.m00;
+            M.m01 = outR.m01;
+            M.m02 = outR.m02;
+            M.m03 = 0;
+
+            M.m10 = outR.m10;
+            M.m11 = outR.m11;
+            M.m12 = outR.m12;
+            M.m13 = 0;
+
+            M.m20 = outR.m20;
+            M.m21 = outR.m21;
+            M.m22 = outR.m22;
+            M.m23 = 0;
+
+            M.m30 = t.x;
+            M.m31 = t.y;
+            M.m32 = t.z;
+            M.m33 = 1;
+
+            return M;
         }
 
         /// <summary>
         /// Function to convert from parameter vector (used by LM) into the
         /// projection matrix calling getProjectionMatrixFromRT.
-        /// TODO
+        /// Get the transformation matrix from pose parameters step = [t' r']
+        /// TODO - Done Alexa
         /// </summary>
         private Matrix4x4 getProjectionMatrixFromParam( float[] step )
         {
-            return new Matrix4x4();
+            Vector3 dt = new Vector3.one * step;
+            Vector3 dr = new Vector3.one * step[3];
+            return getProjectionMatrixFromRT(dr, dt);
         }
 
         /// <summary>
         /// Function to convert from degrees of rotation into modified
         /// Rodriguez parameters.
-        /// TODO
+        /// TODO - DONE Alexa
         /// </summary>
         private Vector3 getMRPfromDegree( Vector3 r )
         {
-            return new Vector3();
+            float rotationX = r.x * DEGTORAD;
+            float rotationY = r.y * DEGTORAD;
+            float rotationZ = r.z * DEGTORAD;
+
+            float c1 = Mathf.Cos(rotationY / 2);
+            float c2 = Mathf.Cos(rotationZ / 2);
+            float c3 = Mathf.Cos(rotationX / 2);
+
+            float s1 = Mathf.Sin(rotationY / 2);
+            float s2 = Mathf.Sin(rotationZ / 2);
+            float s3 = Mathf.Sin(rotationX / 2);
+
+            float c1c2 = c1 * c2;
+            float s1s2 = s1 * s2;
+
+            float rotation1 = c1c2*s3 + s1s2*c3;
+            float rotation2 = s1*c2*c3 + c1*s2*s3;
+            float rotation3 = c1*s2*c3 - s1*c2*s3;
+            float rotation4 = c1c2*c3 - s1s2*s3;
+
+            float normal = 1 / Mathf.Sqrt(rotation1 *rotation1 + rotation2 * rotation2 + rotation3 * rotation3 + rotation4 * rotation4);
+
+            float b0 = rotation4 * normal;
+            float b1 = rotation1 * normal;
+            float b2 = rotation2 * normal;
+            float b3 = rotation3 * normal;
+
+            Vector3 theta = new Vector3(b1 / (1 + b0),  b2 / (1 + b0), b3 / (1 + b0))
+
+            return theta;
         }
 
     }
