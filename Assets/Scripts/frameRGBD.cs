@@ -18,6 +18,7 @@ namespace HoloProxies.Objects
 
         //TODO ISRView* view; Do we need this?
 
+        HistogramRGB hist;
         Texture2D ptCloud; // Originally it was a Float4Image
 
         //TODO ISRImageHierarchy needed?
@@ -25,8 +26,9 @@ namespace HoloProxies.Objects
 
         //TODO VisualizationState needed?
 
-            //TODO need calib to be its own file?
-        public framRGBD( calib, Vector2 color_size, Vector2 d_size )
+        //TODO need calib to be its own file?
+
+        public frameRGBD( calib, Vector2 color_size, Vector2 d_size )
         {
             depth_size = d_size;
             rgb_size = color_size;

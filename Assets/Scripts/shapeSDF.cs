@@ -22,7 +22,7 @@ namespace HoloProxies.Objects {
         public shapeSDF(int cubeEdgeSize)
         {
             modelLoaded = false;
-            // TODO define a shape to start with
+            // TODO define a shape to start with. Make a sphere for now.
         }
 
         /// <summary>
