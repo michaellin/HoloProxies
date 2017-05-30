@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using HoloProxies.Objects;
+using HoloProxies.Utils;
+
 namespace HoloProxies.Engine
 {
     /// <summary>
@@ -10,7 +13,19 @@ namespace HoloProxies.Engine
     /// </summary>
     public class coreEngine
     {
+        public trackerState trackingState;
 
-        
+        private int histogramNBins;
+        private int numTrackingObjs;
+        private frameRGBD frame;
+
+        public coreEngine( int[] settings, Vector2i d_size, Vector2i rgb_size )
+        {
+            histogramNBins = settings[0];
+            numTrackingObjs = settings[1];
+
+
+        }
+
     }
 }
