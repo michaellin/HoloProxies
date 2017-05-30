@@ -173,9 +173,9 @@ namespace HoloProxies.Objects
         /// </summary>
         private Matrix4x4 getProjectionMatrixFromParam( float[] step )
         {
-            Vector3 dt = new Vector3.one * step;
-            Vector3 dr = new Vector3.one * step[3];
-            return getProjectionMatrixFromRT(dr, dt);
+            Vector3 dt = new Vector3( step[0], step[1], step[2] );
+            Vector3 dr = new Vector3( step[3], step[4], step[5] );
+            return getProjectionMatrixFromRT( dr, dt );
         }
 
         /// <summary>
@@ -185,34 +185,34 @@ namespace HoloProxies.Objects
         /// </summary>
         private Vector3 getMRPfromDegree( Vector3 r )
         {
-            float rotationX = r.x * DEGTORAD;
-            float rotationY = r.y * DEGTORAD;
-            float rotationZ = r.z * DEGTORAD;
+            float rotationX = r.x * Mathf.Deg2Rad;
+            float rotationY = r.y * Mathf.Deg2Rad;
+            float rotationZ = r.z * Mathf.Deg2Rad;
 
-            float c1 = Mathf.Cos(rotationY / 2);
-            float c2 = Mathf.Cos(rotationZ / 2);
-            float c3 = Mathf.Cos(rotationX / 2);
+            float c1 = Mathf.Cos( rotationY / 2 );
+            float c2 = Mathf.Cos( rotationZ / 2 );
+            float c3 = Mathf.Cos( rotationX / 2 );
 
-            float s1 = Mathf.Sin(rotationY / 2);
-            float s2 = Mathf.Sin(rotationZ / 2);
-            float s3 = Mathf.Sin(rotationX / 2);
+            float s1 = Mathf.Sin( rotationY / 2 );
+            float s2 = Mathf.Sin( rotationZ / 2 );
+            float s3 = Mathf.Sin( rotationX / 2 );
 
             float c1c2 = c1 * c2;
             float s1s2 = s1 * s2;
 
-            float rotation1 = c1c2*s3 + s1s2*c3;
-            float rotation2 = s1*c2*c3 + c1*s2*s3;
-            float rotation3 = c1*s2*c3 - s1*c2*s3;
-            float rotation4 = c1c2*c3 - s1s2*s3;
+            float rotation1 = c1c2 * s3 + s1s2 * c3;
+            float rotation2 = s1 * c2 * c3 + c1 * s2 * s3;
+            float rotation3 = c1 * s2 * c3 - s1 * c2 * s3;
+            float rotation4 = c1c2 * c3 - s1s2 * s3;
 
-            float normal = 1 / Mathf.Sqrt(rotation1 *rotation1 + rotation2 * rotation2 + rotation3 * rotation3 + rotation4 * rotation4);
+            float normal = 1 / Mathf.Sqrt( rotation1 * rotation1 + rotation2 * rotation2 + rotation3 * rotation3 + rotation4 * rotation4 );
 
             float b0 = rotation4 * normal;
             float b1 = rotation1 * normal;
             float b2 = rotation2 * normal;
             float b3 = rotation3 * normal;
 
-            Vector3 theta = new Vector3(b1 / (1 + b0),  b2 / (1 + b0), b3 / (1 + b0))
+            Vector3 theta = new Vector3( b1 / (1 + b0), b2 / (1 + b0), b3 / (1 + b0) );
 
             return theta;
         }

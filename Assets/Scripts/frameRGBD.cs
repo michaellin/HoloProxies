@@ -23,7 +23,7 @@ namespace HoloProxies.Objects
         //TODO ISRView* view; Do we need this?
 
         histogramRGB hist;
-        Texture2D ptCloud; // This is of format RGBAFloat
+        Texture2D ptCloud; // 2D point cloud of format RGBAFloat
 
         //TODO ISRImageHierarchy needed?
         //TODO image levels needed?
