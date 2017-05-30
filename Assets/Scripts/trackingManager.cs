@@ -23,7 +23,14 @@ public class trackingManager : MonoBehaviour
 
     public GameObject sourceManager;
 
-    private ManagerState { REINIT_HIST, PROCESS_FRAME, PROCESS_VIDEO, EXIT, PROCESS_PAUSED };
+	private enum ManagerState:byte 
+	{ 
+		REINIT_HIST, 
+		PROCESS_FRAME, 
+		PROCESS_VIDEO, 
+		EXIT, 
+		PROCESS_PAUSED 
+	}
     private ManagerState currentState = ManagerState.PROCESS_PAUSED;
 
     private int processedFrameNo = 0;
@@ -47,13 +54,12 @@ public class trackingManager : MonoBehaviour
 		HandleKeyInput();
 
 		switch ( currentState ) {
-			case ManagerState.REINIT_HIST:
-			float poses[6] = { 0.0f, 0.0f, 0.8f, -PI/2 , 0, 0 };
-			engine.setHFFromParam(poses, 0);
-			//updateHistogramFromRendering() // TODO
+		case ManagerState.REINIT_HIST:
+			float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 }; 
+			engine.setHFFromParam (poses, 0);
+			//updateHistogramFromRendering() // TODO - seems like only needed for display purposes
 			engine.needStarTracker = true;
 			currentState = ManagerState.PROCESS_VIDEO;
-			processedFrameNo++;
 			break;
 
 			case ManagerState.PROCESS_FRAME:
@@ -63,7 +69,6 @@ public class trackingManager : MonoBehaviour
 
 			case ManagerState.PROCESS_VIDEO:
 			engine.ProcessFrame(); // TODO
-			processedFrameNo++;
 			break;
 
 			case ManagerState.EXIT:
@@ -76,7 +81,7 @@ public class trackingManager : MonoBehaviour
 
 	}
 
-	private void HandleKeyInput ( void ) {
+	private void HandleKeyInput () {
 		if ( Input.GetKeyDown(KeyCode.R) ) {
 			Debug.Log("Re-Initialize histogram");
 			currentState = ManagerState.REINIT_HIST;
@@ -84,10 +89,10 @@ public class trackingManager : MonoBehaviour
 			Debug.Log("Processing one frame");
 			currentState = ManagerState.PROCESS_FRAME;
 		} else if ( Input.GetKeyDown(KeyCode.B) ) {
-			Debug.Log("Processing i")
+			Debug.Log("Processing video");
 		} else if ( Input.GetKeyDown(KeyCode.E) ) {
-
-		} 
+			Debug.Log("Exiting...");
+		}
 	}
 
 	//void inline updateHistogramFromRendering(UChar4Image* rendering, UChar4Image* rgb, LibISR::Objects::ISRHistogram* hist)
@@ -103,10 +108,7 @@ public class trackingManager : MonoBehaviour
 	private void updateHistogramFromRendering( ) {
 
 	}
-
-
-
-
+		
 } // end trackingManager class
 
 
