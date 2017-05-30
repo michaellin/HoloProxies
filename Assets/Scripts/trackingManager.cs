@@ -15,6 +15,7 @@ public class trackingManager : MonoBehaviour
 
     private const int histogramNBins = 16;
     private const int numTrackingObj = 1;
+    private const int DT_VOL_SIZE = 200;
 
     private coreEngine engine;
     private int[] engineSettings = { histogramNBins, numTrackingObj };
@@ -28,7 +29,7 @@ public class trackingManager : MonoBehaviour
         // Get the source manager from which we get out RGBD pixels.
         msm = sourceManager.GetComponent<MultiSourceManager>();
         // Start off the main engine
-        engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ) );
+        engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ), DT_VOL_SIZE );
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
         engine.trackingState.setHFromParam( poses, 0 );

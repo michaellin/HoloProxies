@@ -17,13 +17,17 @@ namespace HoloProxies.Objects
         public int height;
         public int width;
 
-        Vector2i depth_size;
-        Vector2i rgb_size;
+        public Vector2i depth_size;
+        public Vector2i rgb_size;
 
         //TODO ISRView* view; Do we need this?
 
-        histogramRGB hist;
-        Texture2D ptCloud; // 2D point cloud of format RGBAFloat
+        public histogramRGB hist;
+        public Texture2D ptCloud; // 2D point cloud of format RGBAFloat
+
+        public Vector4 boundingbox;
+        public Vector4 intrinsic;
+        public Texture2D rgbd;    // 2D rgbd of format RGBAFloat
 
         //TODO ISRImageHierarchy needed?
         //TODO image levels needed?
@@ -38,6 +42,9 @@ namespace HoloProxies.Objects
             rgb_size = color_size;
 
             ptCloud = new Texture2D( d_size.x, d_size.y, TextureFormat.RGBAFloat, false );
+
+            rgbd = new Texture2D( d_size.x, d_size.y, TextureFormat.RGBAFloat, false );
+
 
         }
 
