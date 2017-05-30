@@ -8,6 +8,7 @@ namespace HoloProxies.Objects
     /// The histogramRGB class is data structure that hold the histogram data of the RGB values.
     /// This is used to calculate the probability function used for the w value of the point cloud.
     /// Not sure how using the histogram RGB as point cloud w variable works...
+    /// File from: ISRHistogram.h
     /// </summary>
     public class histogramRGB
     {
@@ -86,9 +87,38 @@ namespace HoloProxies.Objects
 
         }
 
-        public void updateHistogramFromLabelledRGBD(  )
+        /// <summary>
+        /// Function to update a histogram from RGBD at rates rf and rb. It uses bounding box. This can call 
+        /// buildHistogramFromLabelledRGBD and updateHistogram to update the histogram data. Input format is RGBAFloat.
+        /// TODO
+        /// </summary>
+        public void updateHistogramFromLabelledRGBD( Texture2D inimg, float rf, float rb, Vector4 bb )
         {
 
+        }
+
+        public void clearNormalised()
+        {
+            for (int i = 0; i < dim; i++)
+            {
+                data_normalized[i] = new Vector2();
+            }
+        }
+
+        public void clearNotNormalised()
+        {
+            for (int i = 0; i < dim; i++)
+            {
+                data_notnormalized[i] = new Vector2();
+            }
+        }
+
+        public void clearPosterior()
+        {
+            for( int i = 0; i < dim; i++)
+            {
+                posterior[i] = 0.0f;
+            }
         }
 
         public void clear()

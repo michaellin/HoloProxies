@@ -7,6 +7,7 @@ namespace HoloProxies.Objects
     /// <summary>
     /// The frameRGBD class carries the intermediate data for a 
     /// RGBD frame, including occlusion map and pointCloud.
+    /// File from: ISRFrame.h
     /// </summary>
     public class frameRGBD
     {

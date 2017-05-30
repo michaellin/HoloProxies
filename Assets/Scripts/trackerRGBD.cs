@@ -9,6 +9,7 @@ namespace HoloProxies.Engine
     /// <summary>
     /// The trackerRGBD class implements all the algorithm of computing the energy function and minimizing it using
     /// Levenberg-Marquardt.
+    /// File from: ISRRGBDTracker.cpp/.h, ISRTracker.h, ISRRGBDTracker_CPU.cpp/.h, ISRRGBDTracker_shared.h
     /// </summary>
     public class trackerRGBD {
 

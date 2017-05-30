@@ -10,6 +10,7 @@ namespace HoloProxies.Engine
     /// The trackerState class contains the current state
     /// of the multi-object object tracker.
     /// Energy function is evaluated given this class.
+    /// File from: ISRTrackingState.h
     /// </summary>
     public class trackerState
     {

@@ -8,13 +8,14 @@ namespace HoloProxies.Objects
     /// The objectPose class encodes the pose of the object
     /// as a 6-DOF transformation from object coordinates
     /// to camera coordinates in the homography matrix H.
+    /// File from: ISRPose.h
     /// </summary>
     public class objectPose
     {
         private Matrix4x4 H; // transformation obj->cam
         private Matrix4x4 invH; // inverse transformation cam->obj
 
-        /*** public helper functions ***/
+        /*** public functions ***/
         public objectPose()
         {
             H = new Matrix4x4();

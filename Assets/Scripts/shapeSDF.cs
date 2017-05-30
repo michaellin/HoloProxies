@@ -8,6 +8,7 @@ namespace HoloProxies.Objects {
     /// Instances should contain a buffer of floats of size cubeEdgeSize^3 and each voxel in this cube contains 
     /// the distance to the nearest object surface.
     /// TODO: Need to find a consistent way to load a shape into this SDF container.
+    /// File from: ISRShapeUnion.h and ISRShape.h
     /// </summary>
     public class shapeSDF
     {
