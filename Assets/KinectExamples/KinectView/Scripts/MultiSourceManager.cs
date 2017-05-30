@@ -5,7 +5,10 @@ using Windows.Kinect;
 public class MultiSourceManager : MonoBehaviour {
     public int ColorWidth { get; private set; }
     public int ColorHeight { get; private set; }
-    
+
+    public int DepthWidth { get; private set; }
+    public int DepthHeight { get; private set; }
+
     private KinectSensor _Sensor;
     private MultiSourceFrameReader _Reader;
     private Texture2D _ColorTexture;
@@ -22,7 +25,7 @@ public class MultiSourceManager : MonoBehaviour {
         return _DepthData;
     }
 
-    void Start () 
+    void Awake () 
     {
         _Sensor = KinectSensor.GetDefault();
         
@@ -38,6 +41,8 @@ public class MultiSourceManager : MonoBehaviour {
             _ColorData = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
             
             var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
+            DepthWidth = depthFrameDesc.Width;
+            DepthHeight = depthFrameDesc.Height;
             _DepthData = new ushort[depthFrameDesc.LengthInPixels];
             
             if (!_Sensor.IsOpen)
