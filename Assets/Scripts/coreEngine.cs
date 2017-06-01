@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 using HoloProxies.Objects;
 using HoloProxies.Utils;
 
@@ -43,14 +42,15 @@ namespace HoloProxies.Engine
             // TODO
 
             frame.boundingbox = lowLevelEngine.findBoundingBoxFromCurrentState();
-            frame.intrinsic = intrinsics_d; // TODO find out if this is needed
+            //frame.intrinsic = intrinsics_d; // TODO find out if this is needed
 
             lowLevelEngine.prepareAlignedRGBDData( out frameRGBD, rawDepth, frameRGBD, homo_depth_to_color ); // TODO Might not need this function at all
 
             // Size the image size correctly. Downsample if needed.
             trackingState.boundingBox = frame.boundingbox;
 
-            lowLevelEngine.preparePointCloudFromAlignedRGBDImage( frame.ptCloud, frame.rgbd, frame.hist, frame.intrinsic, frame.boundingbox );
+			// TODO change this to ISR frame manager
+            //lowLevelEngine.preparePointCloudFromAlignedRGBDImage( frame.ptCloud, frame.rgbd, frame.hist, frame.intrinsic, frame.boundingbox );
 
             if (needStarTracker)
             {
