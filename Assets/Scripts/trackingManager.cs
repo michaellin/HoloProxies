@@ -24,7 +24,7 @@ public class trackingManager : MonoBehaviour
     public GameObject sourceManager;
 
 	private enum ManagerState:byte 
-	{ 
+	{
 		REINIT_HIST, 
 		PROCESS_FRAME, 
 		PROCESS_VIDEO, 
@@ -40,12 +40,12 @@ public class trackingManager : MonoBehaviour
     {
         // Get the source manager from which we get out RGBD pixels.
         msm = sourceManager.GetComponent<MultiSourceManager>();
+
         // Start off the main engine
         engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ), DT_VOL_SIZE );
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
         engine.trackingState.setHFromParam( poses, 0 );
-
     }
 
 	// Update is called once per frame
