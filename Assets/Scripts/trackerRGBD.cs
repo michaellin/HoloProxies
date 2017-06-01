@@ -312,7 +312,14 @@ namespace HoloProxies.Engine
         #endregion
 
         #region helper functions
-        private void computeJacobianAndHessian( float[] gradient, float[] hession, trackerState tracker )
+        /// <summary>
+        /// computeJacobianAndHessian helper function to get jacobian and hessian used for the next step. This function should not change
+        /// anything in the tracker object.
+        /// </summary>
+        /// <param name="gradient"></param>
+        /// <param name="hessian"></param>
+        /// <param name="tracker"></param>
+        private void computeJacobianAndHessian( float[] gradient, float[] hessian, trackerState tracker )
         {
             int count = frame.Camera3DPoints.Length;
             CameraSpacePoint[] ptcloud = frame.Camera3DPoints; // 3D voxels in meters
@@ -332,13 +339,28 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                if (computePerPixelJacobian( out jacobian, ptcloud, pfArray, shapes, poses, objCount ))
+                if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], shapes, poses, objCount ))
                 {
                     for (int a = 0, counter = 0; a < paramNum; a++)
                     {
                         globalGradient[a] += jacobian[a];
                         for (int b = 0; b <= a; b++, counter++) globalHessian[counter] += jacobian[a] * jacobian[b];
                     }
+                }
+            }
+
+            Array.Copy( globalGradient, gradient, paramNum );
+            for (int r = 0, counter = 0; r < paramNum; r ++) {
+                for (int c = 0; c <= r; c ++, counter ++)
+                {
+                    hessian[r + c * paramNum] = globalHessian[counter];
+                }
+            }
+            for (int r = 0; r < paramNum; ++r)
+            {
+                for (int c = r + 1; c < paramNum; c++)
+                {
+                    hessian[r + c * paramNum] = hessian[c + r * paramNum];
                 }
             }
         }
@@ -354,10 +376,9 @@ namespace HoloProxies.Engine
         /// <param name="poses"></param>
         /// <param name="numObj"></param>
         /// <returns></returns>
-        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVal, shapeSDF[] shapes, objectPose[] poses, int numObj, out float prefix )
+        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVal, shapeSDF[] shapes, objectPose[] poses, int numObj )
         {
             jacobian = new float[numObj * 6];
-            prefix = 0;
             if (pfVal < 0) { return false; }
             float dt = defines.MAX_SDF; float partdt = defines.MAX_SDF;
             int idx; int minidx = 0;
@@ -402,7 +423,9 @@ namespace HoloProxies.Engine
             double d_heaviside_dt = dbase * defines.DTUNE;
             double d_delta_dt = 8.0f * defines.DTUNE * Math.Exp( -2.0f * defines.DTUNE * dt ) / (deto * deto * deto) - 4.0f * defines.DTUNE * dbase;
 
-            prefix = (float) (pfVal * d_delta_dt * defines.TMP_WEIGHT + (1.0f - pfVal) * d_heaviside_dt * (2.0f - defines.TMP_WEIGHT)); // TODO WARNING casting double to float
+            float prefix = (float)(pfVal * d_delta_dt * defines.TMP_WEIGHT + (1.0f - pfVal) * d_heaviside_dt * (2.0f - defines.TMP_WEIGHT)); // TODO WARNING casting double to float
+
+            ddt *= prefix;
 
             Array.Clear( jacobian, 0, numObj * 6 );
             int idxoffset = minidx * 6;
@@ -415,7 +438,6 @@ namespace HoloProxies.Engine
             jacobian[idxoffset + 5] = 4.0f * (ddt.y * minpt.x - ddt.x * minpt.y);
 
             return true;
-
         }
 
 
@@ -440,19 +462,19 @@ namespace HoloProxies.Engine
         {
             float vol_scale = defines.VOL_SCALE;
             float dt_vol_size = defines.DT_VOL_SIZE;
-            int x = (int) (pt.x * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.x);
-            int y = (int) (pt.y * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.y);
-            int z = (int) (pt.z * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.z);
+            int x = (int)(pt.x * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.x);
+            int y = (int)(pt.y * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.y);
+            int z = (int)(pt.z * vol_scale + dt_vol_size / 2.0f - 1.0f + offpt.z);
 
             if (x > 0 && x < dt_vol_size - 1.0f &&
                 y > 0 && y < dt_vol_size - 1.0f &&
                 z > 0 && z < dt_vol_size - 1.0f)
-                return (int) ((z * dt_vol_size + y) * dt_vol_size + x);
+                return (int)((z * dt_vol_size + y) * dt_vol_size + x);
             else
                 return -1;
         }
 
-        private Vector3 getSDFNormal(Vector3 pt_f, float[] voxelBlock, out bool ddtFound)
+        private Vector3 getSDFNormal( Vector3 pt_f, float[] voxelBlock, out bool ddtFound )
         {
             Vector3 ddt = new Vector3();
 
@@ -460,7 +482,7 @@ namespace HoloProxies.Engine
             int idx;
 
             idx = pt2IntIdx_offset( pt_f, new Vector3( 1, 0, 0 ) );
-            if (idx == -1) { ddtFound = false;  return new Vector3(); }
+            if (idx == -1) { ddtFound = false; return new Vector3(); }
             dt1 = voxelBlock[idx];
             idx = pt2IntIdx_offset( pt_f, new Vector3( -1, 0, 0 ) );
             if (idx == -1) { ddtFound = false; return new Vector3(); }
@@ -484,7 +506,6 @@ namespace HoloProxies.Engine
             ddt.x = (dt1 - dt2) * 0.5f;
 
             ddtFound = true; return ddt;
-
         }
 
         #endregion
