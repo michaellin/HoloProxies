@@ -151,6 +151,10 @@ namespace HoloProxies.Engine
                 for (int iter = 0; iter < MAX_STEPS; iter++)
                 {
                     computeJacobianAndHessian( ATb, ATA, tempState );
+                    while (true)
+                    {
+                        // perform the single step stuff here. TODO Michael
+                    }
                 }
             }
 
