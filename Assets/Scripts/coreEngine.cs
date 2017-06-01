@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using HoloProxies.Objects;
 using HoloProxies.Utils;
-
+// ALERT: CLASS WILL BE DEPRECATED  
 namespace HoloProxies.Engine
 {
     /// <summary>
