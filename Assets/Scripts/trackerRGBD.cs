@@ -354,15 +354,13 @@ namespace HoloProxies.Engine
         /// <param name="poses"></param>
         /// <param name="numObj"></param>
         /// <returns></returns>
-        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVec, shapeSDF[] shapes, objectPose[] poses, int numObj )
+        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVal, shapeSDF[] shapes, objectPose[] poses, int numObj, out float prefix )
         {
-            if (pfVec < 0)
-            {
-                jacobian = new float[numObj * 6];
-                return false;
-            }
+            jacobian = new float[numObj * 6];
+            prefix = 0;
+            if (pfVal < 0) { return false; }
             float dt = defines.MAX_SDF; float partdt = defines.MAX_SDF;
-            int idx; int minidx;
+            int idx; int minidx = 0;
             float[] voxelBlocks = new float[defines.DT_VOL_3DSIZE];
             float[] minVoxelBlocks = new float[defines.DT_VOL_3DSIZE];
             Vector3 pt = new Vector3( ptcloud.X, ptcloud.Y, ptcloud.Z );
@@ -391,13 +389,33 @@ namespace HoloProxies.Engine
                     }
                 }
             }
-            if (!minfound)
-            {
-                jacobian = new float[numObj * 6];
-                return false;
-            }
+            if (!minfound) { return false; }
 
             ddt = getSDFNormal( minpt, minVoxelBlocks, out ddtfound );
+
+            if (!ddtfound) { return false; }
+
+            double exp_dt = Math.Exp( -dt * defines.DTUNE );
+            double deto = exp_dt + 1.0f;
+            double dbase = exp_dt / (deto * deto);
+
+            double d_heaviside_dt = dbase * defines.DTUNE;
+            double d_delta_dt = 8.0f * defines.DTUNE * Math.Exp( -2.0f * defines.DTUNE * dt ) / (deto * deto * deto) - 4.0f * defines.DTUNE * dbase;
+
+            prefix = (float) (pfVal * d_delta_dt * defines.TMP_WEIGHT + (1.0f - pfVal) * d_heaviside_dt * (2.0f - defines.TMP_WEIGHT)); // TODO WARNING casting double to float
+
+            Array.Clear( jacobian, 0, numObj * 6 );
+            int idxoffset = minidx * 6;
+
+            jacobian[idxoffset + 0] = ddt.x;
+            jacobian[idxoffset + 1] = ddt.y;
+            jacobian[idxoffset + 2] = ddt.z;
+            jacobian[idxoffset + 3] = 4.0f * (ddt.z * minpt.y - ddt.y * minpt.z);
+            jacobian[idxoffset + 4] = 4.0f * (ddt.x * minpt.z - ddt.z * minpt.x);
+            jacobian[idxoffset + 5] = 4.0f * (ddt.y * minpt.x - ddt.x * minpt.y);
+
+            return true;
+
         }
 
 
@@ -438,7 +456,6 @@ namespace HoloProxies.Engine
         {
             Vector3 ddt = new Vector3();
 
-            bool isFound;
             float dt1; float dt2;
             int idx;
 
