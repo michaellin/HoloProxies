@@ -14,22 +14,12 @@ namespace HoloProxies.Objects
     /// </summary>
     public class FrameManager
     {
-        public int height;
-        public int width;
-
-        public Vector2i depth_size;
-        public Vector2i rgb_size;
-
-        //TODO ISRView* view; Do we need this?
-
-        public histogramRGB hist;
-
         public Vector4 boundingbox;
 
 		public int DownsampleSize = 2;
 
-		public int FrameWidth { get; private set; }
-		public int FrameHeight { get; private set; }
+		public int Width { get; private set; }
+		public int Height { get; private set; }
 
 		public int ColorWidth { get; private set; }
 		public int ColorHeight { get; private set; }
@@ -51,13 +41,18 @@ namespace HoloProxies.Objects
 		private MultiSourceFrameReader _Reader;
 		private CoordinateMapper _Mapper;
 
+		private ColorHistogram histogram;
+
 		// Constructor
-        public FrameManager( )
+		public FrameManager( ColorHistogram hist )
         {
 			_Sensor = KinectSensor.GetDefault();
 
 			if (_Sensor != null) 
 			{
+				// Save histogram
+				histogram = hist;
+
 				_Mapper = _Sensor.CoordinateMapper;
 
 				_Reader = _Sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth);
@@ -77,15 +72,15 @@ namespace HoloProxies.Objects
 				// Downsample all data frames if necessary
 
 				// Set FrameWidth and FrameHeight to the downsampled size
-				FrameWidth = DepthWidth;
-				FrameHeight = DepthHeight;
+				Width = DepthWidth;
+				Height = DepthHeight;
 
-				PfImage = new Texture2D(FrameWidth, FrameHeight, TextureFormat.RGBA32, false);
+				PfImage = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
 
 				// Set buffers to align depth data to RGB and to align camera points
 				ColorPoints = new ColorSpacePoint[DepthWidth * DepthHeight];
 				Camera3DPoints = new CameraSpacePoint[DepthWidth * DepthHeight];
-				PfVec = new float[FrameWidth * FrameHeight];
+				PfVec = new float[Width * Height];
 
 				if (!_Sensor.IsOpen)
 				{
@@ -147,10 +142,10 @@ namespace HoloProxies.Objects
 			// Stores 3D point cloud
 			_Mapper.MapDepthFrameToCameraSpace(DepthData, Camera3DPoints);
 
-			for (int i = 0; i < FrameHeight; i++) {
-				for (int j = 0; j < FrameWidth; j++) {
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < Width; j++) {
 
-					int idx = i * FrameWidth + j;
+					int idx = i * Width + j;
 
 					// if point is not in the bounding box
 					if (j < boundingbox.x || j >= boundingbox.z || i < boundingbox.y || i >= boundingbox.w) {
@@ -172,12 +167,12 @@ namespace HoloProxies.Objects
 		}
 
 		private void GetPf( Color pixel) {
-			int noBins = ColorHistogram.BinsNumber;
+			int noBins = histogram.BinsNumber;
 			int ru = pixel.r / noBins;
 			int gu = pixel.g / noBins;
 			int bu = pixel.b / noBins;
 			int pidx = ru * noBins * noBins + gu * noBins + bu;
-			return ColorHistogram [pidx];
+			return histogram [pidx];
 		}
 
 
@@ -187,13 +182,13 @@ namespace HoloProxies.Objects
 
 		public void ComputePfImageFromHistogram () {
 
-			int noBins = ColorHistogram.BinsNumber;
+			int noBins = histogram.BinsNumber;
 			float pf = 0;
 
-			for (int i = 0; i < FrameHeight; i++) {
-				for (int j = 0; j < FrameWidth; j++) {
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < Width; j++) {
 
-					int idx = i * FrameWidth + FrameHeight;
+					int idx = i * Width + Height;
 					Color pixel = ColorTexture.GetPixel (ColorPoints [idx].X, ColorPoints [idx].Y);
 					pf = GetPf (pixel);
 					if (pf > 0.5f) {
