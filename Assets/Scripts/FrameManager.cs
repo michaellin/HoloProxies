@@ -14,9 +14,9 @@ namespace HoloProxies.Objects
     /// </summary>
     public class FrameManager
     {
-        public Vector4 boundingbox;
+		public Vector4 boundingbox;
 
-        public int DownsampleSize = 2;
+        public int DownsampleSize = 1;
 
         public int Width { get; private set; }
         public int Height { get; private set; }
