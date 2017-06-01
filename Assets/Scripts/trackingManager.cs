@@ -55,12 +55,10 @@ public class trackingManager : MonoBehaviour
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
         tracker.trackingState.setHFromParam( poses, 0 );
-
     }
 
-    // Update is called once per frame
-    void Update()
-    {
+	// Update is called once per frame
+	void Update () {
 
         HandleKeyInput();
 
@@ -149,6 +147,4 @@ public class trackingManager : MonoBehaviour
     #endregion
 
 } // end trackingManager class
-
-
 

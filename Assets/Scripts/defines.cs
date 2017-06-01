@@ -9,7 +9,7 @@ namespace HoloProxies.Utils
     {
 
         public const int MAX_OBJECT_COUNT = 2;
-        public const int HISTOGRAM_BIN = 32;
+        public const int HISTOGRAM_NBIN = 16;
         public const int MAX_IMG_PTS = 307200;
         public const int DT_VOL_SIZE = 200;
         public const int BLOCK_SIZE_SDF = 8;
