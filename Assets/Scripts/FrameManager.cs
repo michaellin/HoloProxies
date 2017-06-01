@@ -24,10 +24,11 @@ namespace HoloProxies.Objects
 
         public histogramRGB hist;
         public Texture2D ptCloud; // 2D point cloud of format RGBAFloat
+		public Texture2D rgbd;    // 2D rgbd of format RGBAFloat
 
-        public Vector4 boundingbox;
-        public Vector4 intrinsic;
-        public Texture2D rgbd;    // 2D rgbd of format RGBAFloat
+		// from hierarchy image levels
+        //public Vector4 boundingbox;
+        //public Vector4 intrinsic;
 
         //TODO ISRImageHierarchy needed?
         //TODO image levels needed?
@@ -40,13 +41,17 @@ namespace HoloProxies.Objects
         {
             depth_size = d_size;
             rgb_size = color_size;
-
             ptCloud = new Texture2D( d_size.x, d_size.y, TextureFormat.RGBAFloat, false );
-
             rgbd = new Texture2D( d_size.x, d_size.y, TextureFormat.RGBAFloat, false );
-
-
         }
+
+		public void GetRGBD ( out Texture2D rgbdTexture ) {
+			rgbdTexture = rgbd;
+		}
+
+		public void MapRGBtoRGBD ( out UInt16[] LookupTable ) {
+			
+		}
 
 
     }

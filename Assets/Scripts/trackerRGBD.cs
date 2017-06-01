@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using HoloProxies.Engine;
 using HoloProxies.Objects;
 
 namespace HoloProxies.Engine
@@ -40,10 +41,10 @@ namespace HoloProxies.Engine
 		int ATA_size; // (Atb_size^2)
 
 		// Hessian approximated with JTJ
-		float* ATA_host;
+		float ATA_host;
 
 		// gradient
-		float* ATb_host;
+		float ATb_host;
 
 		#region ISRRGBtracker.cpp
 		trackerRGBD(int nObjs)
