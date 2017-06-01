@@ -19,5 +19,9 @@ namespace HoloProxies.Utils
         public const float MAX_SDF = 128.0f;
         public const int NUM_OBJ = 1;
 
+		public const int HIST_USELESS_PIXEL = -1;
+		public const int HIST_FG_PIXEL = -2;
+		public const int HIST_BG_PIXEL = -3;
+
     }
 }

@@ -35,6 +35,8 @@ namespace HoloProxies.Objects
         public ColorSpacePoint[] ColorPoints { get; private set; }
         public byte[] ColorData { get; private set; }
 
+		public Color[] Mask { get; private set; }
+
         public ushort[] DepthData { get; private set; }
 
         private KinectSensor _Sensor;
@@ -81,6 +83,7 @@ namespace HoloProxies.Objects
                 ColorPoints = new ColorSpacePoint[DepthWidth * DepthHeight];
                 Camera3DPoints = new CameraSpacePoint[DepthWidth * DepthHeight];
                 PfVec = new float[Width * Height];
+				Mask = new Color[Width * Height];
 
                 if (!_Sensor.IsOpen)
                 {
@@ -130,7 +133,19 @@ namespace HoloProxies.Objects
 
         }
 
-        // Creates a lookup list ColorPoints that map DepthData to ColorData
+		/// <summary>
+		/// Given a color space point with x,y coordinates of a pixel location
+		/// return the corresponding rgb pixel 
+		/// </summary>
+		/// <returns>The pixel value.</returns>
+		/// <param name="pt">Point.</param>
+		public Color GetPixelValue( ColorSpacePoint pt ) {
+			return ColorTexture.GetPixel (pt.X, pt.Y);
+		}
+
+		/// <summary>
+		/// Creates a lookup list ColorPoints that map DepthData to ColorData
+		/// </summary>
         private void AlignRGBD()
         {
             // Stores RGB points
@@ -163,14 +178,22 @@ namespace HoloProxies.Objects
                     }
                     else
                     {
-                        Color pixel = ColorTexture.GetPixel( ColorPoints[idx].X, ColorPoints[idx].Y );
                         // calculate pf
-                        PfVec[idx] = GetPf( pixel );
+						PfVec[idx] = GetPf( GetPixelValue(ColorPoints[idx]) );
                     }
                 }
             }
         }
 
+		// TODO
+		// Use the current bounding box to assign foreground pixels
+		// Everything else assign as background
+		// This updated the vector Mask
+		public void LabelForegroundFromBoundingBox () {
+			//Mask = //
+		}
+
+		// TODO if want to Downsample
         private void DownsampleImage()
         {
         }
@@ -185,9 +208,10 @@ namespace HoloProxies.Objects
             return histogram[pidx];
         }
 
-
         // TODO
-        private void findBoundingBoxFromCurrentState()
+        // Project current pose points and create a bounding box that we will use
+		// for the histogram
+		private void findBoundingBoxFromCurrentState()
         {
         }
 
