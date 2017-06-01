@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using HoloProxies.Utils;
+
 namespace HoloProxies.Objects {
     /// <summary>
     /// The shapeSDF class is the container that defines the shape to be tracked as a signed distance function.
@@ -13,16 +15,15 @@ namespace HoloProxies.Objects {
     public class shapeSDF
     {
         // 3-Dimensional array of floats that contains the SDF values.
-        private float[,,] shape_buffer;
-
-        public bool modelLoaded;
+        public float[] dt;       // Allow others to directly access this variale. Should be read only
+        public Vector3 volSize;
 
         /// <summary>
         /// Class constructor should initialize the shape_buffer. 
         /// </summary>
-        public shapeSDF(int cubeEdgeSize)
+        public shapeSDF()
         {
-            modelLoaded = false;
+            volSize = new Vector3( defines.DT_VOL_SIZE, defines.DT_VOL_SIZE, defines.DT_VOL_SIZE );
             // TODO define a shape to start with. Make a sphere for now.
         }
 
@@ -30,11 +31,11 @@ namespace HoloProxies.Objects {
         /// Function to access the SDF values. It will be called per pixel to calculate
         /// energy so it should be efficient.
         /// </summary>
-        public float[,,] getSDFVoxels()
+        public float[] getSDFVoxels()
         {
-            return shape_buffer;
+            return dt;
         }
-        
+
     }
 }
 
