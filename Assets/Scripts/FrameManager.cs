@@ -210,7 +210,7 @@ namespace HoloProxies.Objects
 
         // Project current pose points and create a bounding box that we will use
 		// for the histogram
-		private void findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
+		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
         {
 			Vector3[] corners = new Vector3[8];
 			Vector3[] ipts = new Vector3[state.numPoses () * 8];
