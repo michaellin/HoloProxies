@@ -31,8 +31,12 @@ namespace HoloProxies.Objects
 			frame = fr;
 		}
 
-		// Update histogram based on an existing histogram
-		public void UpdateHistogram( ColorHistogram newHist, float rf, float rb ) {
+        // Update histogram based on an existing histogram
+        /// <summary>
+        /// Function to update current HistogramRGB given a new HistogramRGB. However, update it
+        /// at a decaying rate. Update the foreground at rf rate and background at rb rate.
+        /// </summary>
+        public void UpdateHistogram( ColorHistogram newHist, float rf, float rb ) {
 			for (int i = 0; i < dim; i++) {
 				this.data_normalized [i].x = this.data_normalized [i].x * (1 - rf) + newHist.data_normalized [i].x * rf;
 				this.data_normalized[i].y = this.data_normalized[i].y * (1 - rb) + newHist.data_normalized[i].y * rb;
@@ -40,7 +44,10 @@ namespace HoloProxies.Objects
 			}
 		}
 
-		public void BuildHistogram() {
+        /// <summary>
+        /// Function to build a histogram from color and mask. These two are RGBA32 format.
+        /// </summary>
+        public void BuildHistogram() {
 			int idx_mask;
 			int ru, gu, bu;
 			int pidx;
@@ -87,6 +94,9 @@ namespace HoloProxies.Objects
 			}
 		}
 
+        /// <summary>
+        /// Function to build a histogram from RGBD. Input format is RGBAFloat.
+        /// </summary>
 		public void BuildHistogramFromLabeledRGBD() {
 			int idx_mask;
 			int ru, gu, bu;
@@ -140,6 +150,12 @@ namespace HoloProxies.Objects
 			}
 		}
 
+        /// <summary>
+        /// Function to update a histogram from RGBD at rates rf and rb. This can call buildHistogramFromLabelledRGBD
+        /// and updateHistogram. Input format is RGBAFloat.
+        /// </summary>
+        /// <param name="rf"></param>
+        /// <param name="rb"></param>
 		public void UpdateHistogramFromLabeledRGBD(float rf, float rb)
 		{
 			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.frame);
@@ -151,6 +167,7 @@ namespace HoloProxies.Objects
 		public void buildHistogramFromLabeledRGBD()
 		{
 		}
+
 		public void updateHistogramFromLabeledRGBD(float rf, float rb)
 		{
 //			ISRHistogram* tmphist = new ISRHistogram(this->noBins);

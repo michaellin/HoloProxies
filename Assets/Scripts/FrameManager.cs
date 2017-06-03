@@ -144,9 +144,14 @@ namespace HoloProxies.Objects
 		/// </summary>
 		/// <returns>The pixel value.</returns>
 		/// <param name="pt">Point.</param>
+<<<<<<< HEAD
 		public Color GetPixelValue( ColorSpacePoint pt ) 
 		{
 			return ColorTexture.GetPixel (pt.X, pt.Y);
+=======
+		public Color GetPixelValue( ColorSpacePoint pt ) {
+			return ColorTexture.GetPixel ((int) pt.X, (int) pt.Y);
+>>>>>>> a1250f1da83bcdc699320f244570e97e4c203a6f
 		}
 
 		/// <summary>
@@ -233,7 +238,7 @@ namespace HoloProxies.Objects
 		/// for the histogram
 		/// </summary>
 		/// <param name="state">State.</param>
-		private void findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state )
+		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
         {
 			Vector3[] corners = new Vector3[8];
 			Vector3[] ipts = new Vector3[state.numPoses () * 8];
