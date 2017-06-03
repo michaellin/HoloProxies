@@ -4,6 +4,7 @@ using UnityEngine;
 using HoloProxies.Objects;
 using HoloProxies.Utils;
 // ALERT: CLASS WILL BE DEPRECATED  
+
 namespace HoloProxies.Engine
 {
     /// <summary>
@@ -12,6 +13,7 @@ namespace HoloProxies.Engine
     /// </summary>
     public class coreEngine
     {
+#if COREENGINE_DEPRECATE
         public trackerState trackingState;
 
         private int histogramNBins;
@@ -59,6 +61,7 @@ namespace HoloProxies.Engine
 
 
         }
+#endif
 
     }
 }

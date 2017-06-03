@@ -8,6 +8,7 @@ using Windows.Kinect;
 using HoloProxies.Engine;
 using HoloProxies.Utils;
 using HoloProxies.Objects;
+using Helpers;
 
 namespace HoloProxies.Engine
 {
@@ -66,20 +67,20 @@ namespace HoloProxies.Engine
             tempState = new trackerState( nObjs );
         }
 
-        void computeSingleStep( out float step, float ATA, float ATb, float lambda, int dim )
+        void computeSingleStep( ref float[] step, float[] ATA, float[] ATb, float lambda, int dim )
         {
-            step = 0; //TODO
-                      //			float *tmpATA = new float[dim*dim];
-                      //			for (int i = 0; i < dim*dim; i++) tmpATA[i] = ATA[i];
-                      //
-                      //			for (int i = 0; i < dim * dim; i += (dim + 1))
-                      //			{
-                      //				float &ele = tmpATA[i];
-                      //				if (!(fabs(ele) < 1e-15f)) ele *= (1.0f + lambda); else ele = lambda*1e-10f;
-                      //			}
-                      //
-                      //			ORUtils::Cholesky cholA(tmpATA, dim);
-                      //			cholA.Backsub(step, ATb);
+            int dim2 = dim * dim;
+            float[] tmpATA = new float[dim2];
+            Array.Copy( ATA, tmpATA, dim2 );
+
+            for (int i = 0; i < dim2; i += (dim + 1))
+            {
+                float ele = tmpATA[i];
+                if (!(Math.Abs( ele ) < 1e-15f)) ele *= (1.0f + lambda); else ele = lambda * 1e-10f;
+            }
+
+            Cholesky cholA = new Cholesky( tmpATA, dim );
+            cholA.Backsub( ref step, ATb );
         }
 
         void fastReinitialize( float oldenergy )
@@ -153,7 +154,25 @@ namespace HoloProxies.Engine
                     computeJacobianAndHessian( ATb, ATA, tempState );
                     while (true)
                     {
-                        // perform the single step stuff here. TODO Michael
+                        computeSingleStep( ref cache, ATA, ATb, lambda, ATb_size );
+
+                        // check if we have converged
+                        float MAXnorm = 0.0f;
+                        for (int i = 0; i < ATb_size; i++)
+                        {
+                            float tmp = Math.Abs( cache[i] );
+                            if (tmp > MAXnorm)
+                            {
+                                MAXnorm = tmp;
+                            }
+                        }
+                        if (MAXnorm < MIN_STEP)
+                        {
+                            converged = true;
+                            break;
+                        }
+
+                        // TODO need to finish the rest of this function call. Left to the airport.
                     }
                 }
             }
@@ -278,40 +297,40 @@ namespace HoloProxies.Engine
         /// <param name="pose"></param>
         /// <param name="numObj"></param>
         /// <returns> float enegy value of the input pixel </returns>
-        private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] pose, int numObj )
-        {
-            // TODO Michael left here and also need to implement the hessian and jacobian as helper function
-            // printf("shared energy\n");
-            if (pf > 0)
-            {
-                float dt = defines.MAX_SDF, partdt = defines.MAX_SDF;
-                int idx;
-                float* voxelBlocks;
+        //private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] pose, int numObj )
+        //{
+        //    // TODO Michael left here and also need to implement the hessian and jacobian as helper function
+        //    // printf("shared energy\n");
+        //    if (pf > 0)
+        //    {
+        //        float dt = defines.MAX_SDF, partdt = defines.MAX_SDF;
+        //        int idx;
+        //        float* voxelBlocks;
 
-                for (int i = 0; i < numObj; i++)
-                {
-                    Vector3f objpt = poses[i].getInvH() * Vector3f( inpt.x, inpt.y, inpt.z );
-                    idx = pt2IntIdx( objpt );
-                    if (idx >= 0)
-                    {
-                        voxelBlocks = shapes[i].getSDFVoxel();
-                        partdt = voxelBlocks[idx];
-                        dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
-                                                        // printf("dt: %f \n", dt);
-                    }
-                }
+        //        for (int i = 0; i < numObj; i++)
+        //        { 
+        //            Vector3f objpt = poses[i].getInvH() * Vector3f( inpt.x, inpt.y, inpt.z );
+        //            idx = pt2IntIdx( objpt );
+        //            if (idx >= 0)
+        //            {
+        //                voxelBlocks = shapes[i].getSDFVoxel();
+        //                partdt = voxelBlocks[idx];
+        //                dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
+        //                                                // printf("dt: %f \n", dt);
+        //            }
+        //        }
 
-                if (dt == MAX_SDF) return -1.0f;
+        //        if (dt == MAX_SDF) return -1.0f;
 
-                float exp_dt = expf( -dt * DTUNE );
-                float deto = exp_dt + 1.0f;
-                float sheaviside = 1.0f / deto;
-                float sdelta = 4.0f * exp_dt * sheaviside * sheaviside;
-                float e = inpt.w * sdelta * TMP_WEIGHT + (1 - inpt.w) * sheaviside * (2 - TMP_WEIGHT);
-                return e;
-            }
-            else return 0.0f;
-        }
+        //        float exp_dt = expf( -dt * DTUNE );
+        //        float deto = exp_dt + 1.0f;
+        //        float sheaviside = 1.0f / deto;
+        //        float sdelta = 4.0f * exp_dt * sheaviside * sheaviside;
+        //        float e = inpt.w * sdelta * TMP_WEIGHT + (1 - inpt.w) * sheaviside * (2 - TMP_WEIGHT);
+        //        return e;
+        //    }
+        //    else return 0.0f;
+        //}
 
         #endregion
 
@@ -716,7 +735,7 @@ namespace HoloProxies.Engine
         // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
         // inpt is also been properly scaled to math the voxel resolution
         // inpt.w is pf for the point
-        bool computePerPixelJacobian( out float jacobian, Vector4 pixel, shapeSDF shape, objectPose pose, int numObj, float prefix )
+        bool computePerPixelJacobian( out float jacobian, UnityEngine.Vector4 pixel, shapeSDF shape, objectPose pose, int numObj, float prefix )
         {
             //			if (inpt.w < 0) return false;
             //
@@ -778,7 +797,7 @@ namespace HoloProxies.Engine
         // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
         // inpt is also been properly scaled to math the voxel resolution
         // inpt.w is pf for the point
-        float findPerPixelDT( Vector4 pixel, shapeSDF shape, objectPose pose, int numObj )
+        float findPerPixelDT( UnityEngine.Vector4 pixel, shapeSDF shape, objectPose pose, int numObj )
         {
             //			if (inpt.w > 0)
             //			{

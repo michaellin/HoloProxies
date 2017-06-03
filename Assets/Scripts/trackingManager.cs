@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 using HoloProxies.Engine;
@@ -137,7 +136,7 @@ public class trackingManager : MonoBehaviour
     private void ProcessFrame()
     {
         // Start a timer to measure fps
-        Stopwatch timer;
+        System.Diagnostics.Stopwatch timer;
 
         frame.updateFrame();
 
