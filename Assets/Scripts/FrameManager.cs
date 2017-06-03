@@ -140,7 +140,7 @@ namespace HoloProxies.Objects
 		/// <returns>The pixel value.</returns>
 		/// <param name="pt">Point.</param>
 		public Color GetPixelValue( ColorSpacePoint pt ) {
-			return ColorTexture.GetPixel (pt.X, pt.Y);
+			return ColorTexture.GetPixel ((int) pt.X, (int) pt.Y);
 		}
 
 		/// <summary>

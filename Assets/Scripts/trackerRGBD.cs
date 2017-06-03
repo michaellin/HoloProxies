@@ -172,64 +172,37 @@ namespace HoloProxies.Engine
                             break;
                         }
 
-                        // TODO need to finish the rest of this function call. Left to the airport.
+                        tempState.applyIncrementalPoseChangesToInvH( cache );
+
+                        evaluateEnergy( out currentenergy, tempState );
+
+                        if (currentenergy > lastenergy)
+                        {
+                            if (Math.Abs( currentenergy - lastenergy ) / Math.Abs( lastenergy + 0.01f) < MIN_DECREASE)
+                            {
+                                converged = true;
+                            }
+                            lastenergy = currentenergy;
+                            lambda *= TR_REGION_INCREASE;
+                            trackingState.setFrom( tempState );
+                        }
+                        else
+                        {
+                            lambda *= TR_REGION_DECREASE;
+                            tempState.setFrom( trackingState );
+                        }
                     }
+                    if (converged) { break; }
                 }
             }
 
-            //			//	--------------------------------------------------------------------------
-            //
-            //			//	 LM
-            //
-            //			//	--------------------------------------------------------------------------
-            //
-            //			////	 These are some sensible default parameters for Levenberg Marquardt.
-            //			////	 The first three control the convergence criteria, the others might
-            //			////	 impact convergence speed.
-            //			static const int MAX_STEPS = 100;
-            //			static const float MIN_STEP = 0.00005f;
-            //			static const float MIN_DECREASE = 0.0001f;
-            //			static const float TR_REGION_INCREASE = 0.10f;
-            //			static const float TR_REGION_DECREASE = 10.0f;
-            //
-            //			{// minimalist LM main loop
-            //				for (int iter = 0; iter < MAX_STEPS; iter++)
-            //				{
-            //					computeJacobianAndHessian(ATb_host, ATA_host, tempState);
-            //
-            //					while (true)
-            //					{
-            //						computeSingleStep(cacheNabla, ATA_host, ATb_host, lambda, ATb_Size);
-            //
-            //						// check if step size is very small, if so, converge.
-            //						float MAXnorm = 0.0;
-            //						for (int i = 0; i<ATb_Size; i++) { float tmp = fabs(cacheNabla[i]); if (tmp>MAXnorm) MAXnorm = tmp; }
-            //						if (MAXnorm < MIN_STEP) { converged = true; break; }
-            //
-            //						tempState->applyIncrementalPoseChangesToInvH(cacheNabla);
-            //
-            //						evaluateEnergy(&currentenergy, tempState);
-            //
-            //						if (currentenergy > lastenergy)
-            //						{
-            //							// check if energy decrease is too small, if so, converge.
-            //							if (std::abs(currentenergy - lastenergy) / std::abs(lastenergy+0.01) < MIN_DECREASE) {converged = true;}
-            //							lastenergy = currentenergy;
-            //							lambda *= TR_REGION_INCREASE;
-            //							accpetedState->setFrom(*tempState);
-            //							break;
-            //						}
-            //						else
-            //						{
-            //							lambda *= TR_REGION_DECREASE;
-            //							tempState->setFrom(*accpetedState);
-            //						}
-            //					}
-            //					if (converged) break;
-            //
-            //				}
-            //
-            //			}
+            // after convergence, the pf of the pointcloud is recycled for histogram update
+            if (lastenergy >= 0.5f && updateappearance)
+            {
+                lableForegroundPixels( trackingState );
+                
+            }
+
             //
             //
             //
@@ -266,7 +239,6 @@ namespace HoloProxies.Engine
             CameraSpacePoint[] ptcloud_ptr = frame.Camera3DPoints;
             float[] pfArray = frame.PfVec;
 
-            //ISRShape_ptr shapes = this->shapeUnion->getShapeList( false );
             objectPose[] poses = state.getPoseList();
             int objCount = state.numPoses();
 
@@ -276,7 +248,6 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                //es = computePerPixelEnergy( frame.Camera3DPoints[i], shapes, poses, objCount );
                 es = computePerPixelEnergy( ptcloud_ptr[i], pfArray[i], poses, objCount );
                 if (es > 0)
                 {
@@ -297,40 +268,39 @@ namespace HoloProxies.Engine
         /// <param name="pose"></param>
         /// <param name="numObj"></param>
         /// <returns> float enegy value of the input pixel </returns>
-        //private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] pose, int numObj )
-        //{
-        //    // TODO Michael left here and also need to implement the hessian and jacobian as helper function
-        //    // printf("shared energy\n");
-        //    if (pf > 0)
-        //    {
-        //        float dt = defines.MAX_SDF, partdt = defines.MAX_SDF;
-        //        int idx;
-        //        float* voxelBlocks;
+        private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] poses, int numObj )
+        {
 
-        //        for (int i = 0; i < numObj; i++)
-        //        { 
-        //            Vector3f objpt = poses[i].getInvH() * Vector3f( inpt.x, inpt.y, inpt.z );
-        //            idx = pt2IntIdx( objpt );
-        //            if (idx >= 0)
-        //            {
-        //                voxelBlocks = shapes[i].getSDFVoxel();
-        //                partdt = voxelBlocks[idx];
-        //                dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
-        //                                                // printf("dt: %f \n", dt);
-        //            }
-        //        }
+            if (pf > 0)
+            {
+                float dt = defines.MAX_SDF;
+                float partdt = defines.MAX_SDF;
+                int idx;
+                float[] voxelBlocks;
 
-        //        if (dt == MAX_SDF) return -1.0f;
+                for (int i = 0; i < numObj; i++)
+                {
+                    Vector3 objpt = poses[i].getInvH() * (new Vector3( inpt.X, inpt.Y, inpt.Z ));
+                    idx = pt2IntIdx( objpt );
+                    if (idx >= 0)
+                    {
+                        voxelBlocks = shapes[i].getSDFVoxels();
+                        partdt = voxelBlocks[idx];
+                        dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
+                    }
+                }
 
-        //        float exp_dt = expf( -dt * DTUNE );
-        //        float deto = exp_dt + 1.0f;
-        //        float sheaviside = 1.0f / deto;
-        //        float sdelta = 4.0f * exp_dt * sheaviside * sheaviside;
-        //        float e = inpt.w * sdelta * TMP_WEIGHT + (1 - inpt.w) * sheaviside * (2 - TMP_WEIGHT);
-        //        return e;
-        //    }
-        //    else return 0.0f;
-        //}
+                if (dt == defines.MAX_SDF) { return -1.0f; };
+
+                double exp_dt = Math.Exp( -dt * defines.DTUNE );
+                double deto = exp_dt + 1.0f;
+                double sheaviside = 1.0f / deto;
+                double sdelta = 4.0f * exp_dt * sheaviside * sheaviside;
+                float e = (float)(pf * sdelta * defines.TMP_WEIGHT + (1 - pf) * sheaviside * (2 - defines.TMP_WEIGHT));
+                return e;
+            }
+            else { return 0.0f; }
+        }
 
         #endregion
 
