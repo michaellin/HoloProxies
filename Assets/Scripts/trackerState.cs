@@ -52,7 +52,9 @@ namespace HoloProxies.Engine
         /// </summary>
         public void applyIncrementalPoseChangesToInvH( float[] step )
         {
-
+			for (int i = 0, j = 0; i < nPose; i++, j += 6) {
+				poses [i].applyIncrementalChangeToInvH (step [j]);
+			}
         }
 
         /// <summary>
@@ -62,7 +64,9 @@ namespace HoloProxies.Engine
         /// </summary>
         public void applyIncrementalPoseChangesToH( float[] step )
         {
-
+			for (int i = 0, j = 0; i < nPose; i++, j += 6) {
+				poses [i].applyIncrementalChangeToH (step [j]);
+			}
         }
 
         /// <summary>
@@ -71,7 +75,12 @@ namespace HoloProxies.Engine
         /// </summary>
         public void setFrom( trackerState inposes )
         {
-
+			int count = inposes.numPoses();
+			boundingBox = inposes.boundingBox;
+			for (int i = 0; i < count; i++)
+			{
+				this.getPose(i).setFromH(inposes.getPose(i).getH());
+			}
         }
 
         /// <summary>
@@ -80,7 +89,7 @@ namespace HoloProxies.Engine
         /// </summary>
         public void setHFromParam( float[] param, int id )
         {
-
+			poses[id].setHFromParam(param);
         }
 
         /// <summary>
@@ -89,7 +98,7 @@ namespace HoloProxies.Engine
         /// </summary>
         public void setInvHFromParam( float[] param, int id )
         {
-
+			poses[id].setInvHFromParam(param);
         }
 
     }
