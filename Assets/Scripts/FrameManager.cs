@@ -98,9 +98,11 @@ namespace HoloProxies.Objects
                     _Sensor.Open();
                 }
             }
+
+			histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
         }
 
-        public void UpdateFrame()
+		public void UpdateFrame(HoloProxies.Engine.trackerState state)
         {
             if (_Reader != null)
             {
@@ -126,8 +128,7 @@ namespace HoloProxies.Objects
                             AlignRGBD();
 
 							// Unproject to 3D points in camera space (based on bounding box)
-                            PreparePointCloud();
-
+                            PreparePointCloud(state);
                         }
 
                         colorFrame.Dispose();
@@ -232,7 +233,7 @@ namespace HoloProxies.Objects
 		/// for the histogram
 		/// </summary>
 		/// <param name="state">State.</param>
-		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
+		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K )
         {
 			Vector3[] corners = new Vector3[8];
 			Vector3[] ipts = new Vector3[state.numPoses () * 8];

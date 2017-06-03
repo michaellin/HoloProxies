@@ -17,9 +17,9 @@ namespace HoloProxies.Objects
 
 		public int BinsNumber, dim;
 
-		private FrameManager frame;
+		private int FrameWidth, FrameHeight;
 
-		public ColorHistogram (int nbins, FrameManager fr) {
+		public ColorHistogram (int nbins, int width, int height ) {
 			BinsNumber = nbins;
 			dim = BinsNumber * BinsNumber * BinsNumber;
 
@@ -28,7 +28,8 @@ namespace HoloProxies.Objects
 
 			posterior = new float[dim];
 
-			frame = fr;
+			FrameWidth = width;
+			FrameHeight = height;
 		}
 
         // Update histogram based on an existing histogram
@@ -47,7 +48,7 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to build a histogram from color and mask. These two are RGBA32 format.
         /// </summary>
-        public void BuildHistogram() {
+		public void BuildHistogram( ColorSpacePoint[] color, Texture2D colorTex, Color[] Mask ) {
 			int idx_mask;
 			int ru, gu, bu;
 			int pidx;
@@ -56,17 +57,18 @@ namespace HoloProxies.Objects
 			float sumBackground = 0;
 
 
-			for (int j = 0; j < frame.Height; j++) {
-				for (int i = 0; i < frame.Width; i++) {
-					int idx = i + j * frame.Width;
-					Color pixel = frame.GetPixelValue(frame.ColorPoints[idx]);
+			for (int j = 0; j < FrameHeight; j++) {
+				for (int i = 0; i < FrameWidth; i++) {
+					int idx = i + j * FrameWidth;
+					ColorSpacePoint pt = color [idx];
+					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
 					ru = pixel.r / BinsNumber;
 					gu = pixel.g / BinsNumber;
 					bu = pixel.b / BinsNumber;
 					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
 
 					// TODO these colors can be replaced by macros?
-					switch (frame.Mask[idx].r) {
+					switch (Mask[idx].r) {
 
 					case Color.white: // foreground is white
 						data_normalized [pidx].x++;
@@ -97,7 +99,7 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to build a histogram from RGBD. Input format is RGBAFloat.
         /// </summary>
-		public void BuildHistogramFromLabeledRGBD() {
+		public void BuildHistogramFromLabeledRGBD( ColorSpacePoint[] color, Texture2D colorTex, float[] pf ) {
 			int idx_mask;
 			int ru, gu, bu;
 			int pidx;
@@ -106,12 +108,14 @@ namespace HoloProxies.Objects
 			float sumBackground = 0;
 
 
-			for (int j = 0; j < frame.Height; j++) {
-				for (int i = 0; i < frame.Width; i++) {
-					int idx = i + j * frame.Width;
+			for (int j = 0; j < FrameHeight; j++) {
+				for (int i = 0; i < FrameWidth; i++) {
+					int idx = i + j * FrameWidth;
 
-					Color pixel = frame.GetPixelValue(frame.ColorPoints[idx]);
-					float w = frame.PfVec [idx];
+
+					ColorSpacePoint pt = color [idx];
+					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
+					float w = pf [idx];
 
 					if (w >= defines.HIST_USELESS_PIXEL)
 						continue;
@@ -156,10 +160,10 @@ namespace HoloProxies.Objects
         /// </summary>
         /// <param name="rf"></param>
         /// <param name="rb"></param>
-		public void UpdateHistogramFromLabeledRGBD(float rf, float rb)
+		public void UpdateHistogramFromLabeledRGBD(float rf, float rb, ColorSpacePoint[] color, Texture2D colorTex, float[] pf)
 		{
-			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.frame);
-			this.BuildHistogramFromLabeledRGBD ();
+			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.FrameWidth, this.FrameHeight);
+			this.BuildHistogramFromLabeledRGBD (color, colorTex, pf);
 			this.UpdateHistogram (tmpHist, rf, rb);
 		}
 
