@@ -200,8 +200,11 @@ namespace HoloProxies.Engine
             if (lastenergy >= 0.5f && updateappearance)
             {
                 lableForegroundPixels( trackingState );
-                
+                // TODO figure out how to recycle the histogram
             }
+
+            state.setFrom( trackingState );
+            state.energy = lastenergy;
 
             //
             //
