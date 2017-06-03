@@ -15,10 +15,7 @@ public class trackingManager : MonoBehaviour
 {
 
     private const int numTrackingObj = 1;       // number of objects being tracked
-
     private FrameManager frame;           // frame manager accesses the kinect data and does all the alignment
-    private ColorHistogram histogram;     // histogram used to keep track of the probability distribution of pixels
-    private shapeSDF[] shapes;            // array of shapes that contain their respective SDFs
     private trackerRGBD tracker;          // tracker that implements the pose estimation algorithm
     private bool needStarTracker = true;  // turn on or off tracking
 
@@ -26,7 +23,7 @@ public class trackingManager : MonoBehaviour
     //private int[] engineSettings = { histogramNBins, numTrackingObj };
     //private MultiSourceManager msm;
 
-    public GameObject sourceManager;
+    //public GameObject sourceManager;
 
     // states for the tracking Manager state machine
     private enum ManagerState : byte
@@ -50,10 +47,8 @@ public class trackingManager : MonoBehaviour
         //engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ), DT_VOL_SIZE );
 
         // Initialize all the important components here
-        frame = new FrameManager( histogram );
-        histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, frame ); // TODO probably will need histogram Nbins
+        frame = new FrameManager(  );
         tracker = new trackerRGBD( numTrackingObj );
-        shapes = new shapeSDF[defines.NUM_OBJ];
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
         tracker.trackingState.setHFromParam( poses, 0 );
@@ -139,11 +134,11 @@ public class trackingManager : MonoBehaviour
         // Start a timer to measure fps
         System.Diagnostics.Stopwatch timer;
 
-        frame.updateFrame();
+        frame.UpdateFrame( tracker.trackingState );
 
         if (needStarTracker)
         {
-            tracker.TrackObjects( frame, shapes, tracker.trackingState, true ); // TODO may want to use false for update appearance instead
+            tracker.TrackObjects( frame, tracker.trackingState, true ); // TODO may want to use false for update appearance instead
         }
 
     }

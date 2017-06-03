@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace HoloProxies.Objects
@@ -75,9 +76,11 @@ namespace HoloProxies.Objects
             H = invH.inverse;
         }
 
-        public void applyIncrementalChangeToInvH( float[] step )
+        public void applyIncrementalChangeToInvH( float[] step, int nObj )
         {
-            Matrix4x4 deltaM = getProjectionMatrixFromParam( step );
+            float[] temp_step = new float[6];
+            Array.Copy( step, 6* nObj, temp_step, 0, 6 );
+            Matrix4x4 deltaM = getProjectionMatrixFromParam( temp_step );
             invH = deltaM * invH;
             H = invH.inverse;
         }
@@ -95,9 +98,11 @@ namespace HoloProxies.Objects
             invH = H.inverse;
         }
 
-        public void applyIncrementalChangeToH( float[] step )
+        public void applyIncrementalChangeToH( float[] step, int nObj )
         {
-            Matrix4x4 deltaM = getProjectionMatrixFromParam( step );
+            float[] temp_step = new float[6];
+            Array.Copy( step, 6 * nObj, temp_step, 0, 6 );
+            Matrix4x4 deltaM = getProjectionMatrixFromParam( temp_step );
             H = deltaM * H;
             invH = H.inverse;
         }

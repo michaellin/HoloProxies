@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using HoloProxies.Objects;
+using HoloProxies.Utils;
 
 namespace HoloProxies.Engine
 {
@@ -17,6 +18,7 @@ namespace HoloProxies.Engine
         private int nPose;
         private objectPose[] poses;
 
+        public shapeSDF[] shapes;            // array of shapes that contain their respective SDFs
         public float energy;
         public Vector4 boundingBox;
 
@@ -28,6 +30,7 @@ namespace HoloProxies.Engine
             energy = 0;
             nPose = num;
             poses = new objectPose[num];
+            shapes = new shapeSDF[defines.NUM_OBJ];
         }
 
         public objectPose[] getPoseList()
@@ -48,24 +51,22 @@ namespace HoloProxies.Engine
         /// <summary>
         /// Function to apply incremental pose changes to all poses
         /// being tracked.
-        /// TOOD
         /// </summary>
         public void applyIncrementalPoseChangesToInvH( float[] step )
         {
 			for (int i = 0, j = 0; i < nPose; i++, j += 6) {
-				poses [i].applyIncrementalChangeToInvH (step [j]);
+				poses[i].applyIncrementalChangeToInvH ( step, i );
 			}
         }
 
         /// <summary>
         /// Function to apply incremental pose changes to all poses
         /// being tracked.
-        /// TOOD
         /// </summary>
         public void applyIncrementalPoseChangesToH( float[] step )
         {
 			for (int i = 0, j = 0; i < nPose; i++, j += 6) {
-				poses [i].applyIncrementalChangeToH (step [j]);
+				poses [i].applyIncrementalChangeToH (step, i);
 			}
         }
 

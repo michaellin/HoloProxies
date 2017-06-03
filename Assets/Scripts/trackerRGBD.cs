@@ -67,7 +67,7 @@ namespace HoloProxies.Engine
             tempState = new trackerState( nObjs );
         }
 
-        void computeSingleStep( ref float[] step, float[] ATA, float[] ATb, float lambda, int dim )
+        void computeSingleStep( float[] step, float[] ATA, float[] ATb, float lambda, int dim )
         {
             int dim2 = dim * dim;
             float[] tmpATA = new float[dim2];
@@ -80,7 +80,7 @@ namespace HoloProxies.Engine
             }
 
             Cholesky cholA = new Cholesky( tmpATA, dim );
-            cholA.Backsub( ref step, ATb );
+            cholA.Backsub( step, ATb );
         }
 
         void fastReinitialize( float oldenergy )
@@ -154,7 +154,7 @@ namespace HoloProxies.Engine
                     computeJacobianAndHessian( ATb, ATA, tempState );
                     while (true)
                     {
-                        computeSingleStep( ref cache, ATA, ATb, lambda, ATb_size );
+                        computeSingleStep( cache, ATA, ATb, lambda, ATb_size );
 
                         // check if we have converged
                         float MAXnorm = 0.0f;

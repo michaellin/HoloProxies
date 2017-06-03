@@ -45,17 +45,16 @@ namespace HoloProxies.Objects
         private MultiSourceFrameReader _Reader;
         private CoordinateMapper _Mapper;
 
-        private ColorHistogram histogram;
+        // histogram used to keep track of the probability distribution of pixels
+        private ColorHistogram histogram;     
 
         // Constructor
-        public FrameManager( ColorHistogram hist )
+        public FrameManager( )
         {
             _Sensor = KinectSensor.GetDefault();
 
             if (_Sensor != null)
             {
-                // Save histogram
-                histogram = hist;
 
                 _Mapper = _Sensor.CoordinateMapper;
 
@@ -87,11 +86,15 @@ namespace HoloProxies.Objects
                 PfVec = new float[Width * Height];
 				Mask = new Color[Width * Height];
 
+                // Save camera intrinsics matrix
 				CameraIntrinsics intrinsics = _Mapper.GetDepthCameraIntrinsics ();
 				K = new Matrix4x4 ();
-				K.m00 = intrinsics.FocalLengthX;    K.m01 = 0;    K.m02 = intrinsics.PrincipalPointX;
-				K.m10 = 0;    K.m11 = intrinsics.FocalLengthY;    K.m12 = intrinsics.PrincipalPointY;
-				K.m20 = 0;    K.m21 = 0;   K.m23 = 1;
+				K.m00 = intrinsics.FocalLengthX;    K.m01 = 0;                          K.m02 = intrinsics.PrincipalPointX;
+				K.m10 = 0;                          K.m11 = intrinsics.FocalLengthY;    K.m12 = intrinsics.PrincipalPointY;
+				K.m20 = 0;                          K.m21 = 0;                          K.m23 = 1;
+
+                // Initialize color histogram
+                histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
 
                 if (!_Sensor.IsOpen)
                 {
@@ -99,7 +102,6 @@ namespace HoloProxies.Objects
                 }
             }
 
-			histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
         }
 
 		public void UpdateFrame(HoloProxies.Engine.trackerState state)
@@ -217,14 +219,15 @@ namespace HoloProxies.Objects
 		/// Gets the pf.
 		/// </summary>
 		/// <param name="pixel">Pixel.</param>
-        private void GetPf( Color pixel )
+        private float GetPf( Color pixel )
         {
+            int ru, gu, bu;
             int noBins = histogram.BinsNumber;
-            int ru = pixel.r / noBins;
-            int gu = pixel.g / noBins;
-            int bu = pixel.b / noBins;
+            ru = (int)(pixel.r / noBins);
+            gu = (int)(pixel.g / noBins);
+            bu = (int)(pixel.b / noBins);
             int pidx = ru * noBins * noBins + gu * noBins + bu;
-            return histogram[pidx];
+            return histogram.posterior[pidx];
         }
 
 		/// <summary>
@@ -233,22 +236,22 @@ namespace HoloProxies.Objects
 		/// for the histogram
 		/// </summary>
 		/// <param name="state">State.</param>
-		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K )
+		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state )
         {
 			Vector3[] corners = new Vector3[8];
 			Vector3[] ipts = new Vector3[state.numPoses () * 8];
-			UnityEngine.Vector4 bb = new UnityEngine.Vector4[Width, Height];
+			UnityEngine.Vector4 bb = new UnityEngine.Vector4(Width, Height, 0, 0);
 			for (int i = -1, idx = 0; i <= 1; i += 2) {
 				for (int j = -1; j <= 1; j += 2) {
 					for (int k = -1; k <= 1; k += 2, idx++) {
-						corners [idx] = Vector3 (i * 0.1f, j * 0.1f, k * 0.1f);
+						corners [idx] = new Vector3 (i * 0.1f, j * 0.1f, k * 0.1f);
 					}
 				}
 			}
 
 			for (int i = 0, idx = 0; i < state.numPoses (); i++) {
 				for (int j = 0; j < 8; j++, idx++) {
-					Matrix4x4 H = state.getPose ().getH ();
+					Matrix4x4 H = state.getPose (i).getH ();
 					ipts [idx] = K * (H * corners [j]);
 					ipts [idx].x /= ipts [idx].z;   ipts [idx].y /= ipts [idx].z;
 
@@ -281,7 +284,7 @@ namespace HoloProxies.Objects
                 {
 
                     int idx = i * Width + Height;
-                    Color pixel = ColorTexture.GetPixel( ColorPoints[idx].X, ColorPoints[idx].Y );
+                    Color pixel = ColorTexture.GetPixel( (int) ColorPoints[idx].X, (int) ColorPoints[idx].Y );
                     pf = GetPf( pixel );
                     if (pf > 0.5f)
                     {

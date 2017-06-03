@@ -26,5 +26,9 @@ namespace HoloProxies.Utils
 		public const int HIST_BG_PIXEL = -3;
 
         public const float TMP_WEIGHT = 1.3f;
+
+        public const int WHITE = 255;
+        public const int BLACK = 0;
+
     }
 }

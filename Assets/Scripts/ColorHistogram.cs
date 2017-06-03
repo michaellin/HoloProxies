@@ -49,7 +49,6 @@ namespace HoloProxies.Objects
         /// Function to build a histogram from color and mask. These two are RGBA32 format.
         /// </summary>
 		public void BuildHistogram( ColorSpacePoint[] color, Texture2D colorTex, Color[] Mask ) {
-			int idx_mask;
 			int ru, gu, bu;
 			int pidx;
 
@@ -62,27 +61,25 @@ namespace HoloProxies.Objects
 					int idx = i + j * FrameWidth;
 					ColorSpacePoint pt = color [idx];
 					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
-					ru = pixel.r / BinsNumber;
-					gu = pixel.g / BinsNumber;
-					bu = pixel.b / BinsNumber;
+					ru = (int) (pixel.r / BinsNumber);
+					gu = (int) (pixel.g / BinsNumber);
+					bu = (int) (pixel.b / BinsNumber);
 					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
+                    
+                    float col = Mask[idx].r;
+                    if (col == defines.WHITE || col == 254) // foreground is white
+                    {
+                        data_normalized[pidx].x++;
+                        sumForeground++;
+                    } else if (col == defines.BLACK || col == 1) // far background is black
+                    {
+                    }
+                    else // other colors are immediate background
+                    {
+                        data_normalized[pidx].y++;
+                        sumBackground++;
+                    }
 
-					// TODO these colors can be replaced by macros?
-					switch (Mask[idx].r) {
-
-					case Color.white: // foreground is white
-						data_normalized [pidx].x++;
-						sumForeground++;
-						break;
-
-					case Color.black: // far background is black
-						break;
-
-						default: // other colors are immediate background
-						data_normalized [pidx].y++;
-						sumBackground++;
-						break;
-					}
 				}
 			}
 
@@ -100,7 +97,6 @@ namespace HoloProxies.Objects
         /// Function to build a histogram from RGBD. Input format is RGBAFloat.
         /// </summary>
 		public void BuildHistogramFromLabeledRGBD( ColorSpacePoint[] color, Texture2D colorTex, float[] pf ) {
-			int idx_mask;
 			int ru, gu, bu;
 			int pidx;
 
@@ -117,16 +113,17 @@ namespace HoloProxies.Objects
 					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
 					float w = pf [idx];
 
-					if (w >= defines.HIST_USELESS_PIXEL)
+					if ( w >= defines.HIST_USELESS_PIXEL )
 						continue;
-					
-					ru = pixel.r / BinsNumber;
-					gu = pixel.g / BinsNumber;
-					bu = pixel.b / BinsNumber;
-					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
+
+                    ru = (int)(pixel.r / BinsNumber);
+                    gu = (int)(pixel.g / BinsNumber);
+                    bu = (int)(pixel.b / BinsNumber);
+                    pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
 
 					// TODO these colors can be replaced by macros?
-					switch ( w ) {
+                    // TODO check this cast to int
+					switch ( (int)w ) {
 
 					case defines.HIST_FG_PIXEL: // foreground pixel
 						data_normalized [pidx].x++;
@@ -174,9 +171,6 @@ namespace HoloProxies.Objects
 
 		public void updateHistogramFromLabeledRGBD(float rf, float rb)
 		{
-//			ISRHistogram* tmphist = new ISRHistogram(this->noBins);
-//			buildHistogramFromLabeledRGBD(inimg,bb);
-//			updateHistogram(tmphist, rf, rb);
 		}
 
 
