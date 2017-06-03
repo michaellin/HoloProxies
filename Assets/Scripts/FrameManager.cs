@@ -210,11 +210,11 @@ namespace HoloProxies.Objects
 
         // Project current pose points and create a bounding box that we will use
 		// for the histogram
-		private void findBoundingBoxFromCurrentState( trackerState state, Matrix4x4 K, Vector2 imgSize )
+		private void findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
         {
 			Vector3[] corners = new Vector3[8];
 			Vector3[] ipts = new Vector3[state.numPoses () * 8];
-			Vector4 bb = new Vector4[imgSize.x, imgSize.y];
+			UnityEngine.Vector4 bb = new UnityEngine.Vector4[imgSize.x, imgSize.y];
 			for (int i = -1, idx = 0; i <= 1; i += 2) {
 				for (int j = -1; j <= 1; j += 2) {
 					for (int k = -1; k <= 1; k += 2, idx++) {
@@ -242,7 +242,6 @@ namespace HoloProxies.Objects
 			bb.w = bb.w > imgSize.y ? imgSize.y : bb.w;
 
 			return bb;
-
         }
 
         public void ComputePfImageFromHistogram()
