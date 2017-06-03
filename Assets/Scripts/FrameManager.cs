@@ -41,12 +41,12 @@ namespace HoloProxies.Objects
 
 		public Matrix4x4 K;
 
+        // histogram used to keep track of the probability distribution of pixels
+        public ColorHistogram histogram;
+
         private KinectSensor _Sensor;
         private MultiSourceFrameReader _Reader;
-        private CoordinateMapper _Mapper;
-
-        // histogram used to keep track of the probability distribution of pixels
-        private ColorHistogram histogram;     
+        private CoordinateMapper _Mapper;    
 
         // Constructor
         public FrameManager( )

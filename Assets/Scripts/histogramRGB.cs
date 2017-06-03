@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// DEPRECATED
+
+
 namespace HoloProxies.Objects
 {
     /// <summary>
@@ -12,6 +15,7 @@ namespace HoloProxies.Objects
     /// </summary>
     public class histogramRGB
     {
+        #if false
         public Vector2[] data_notnormalized;
         public Vector2[] data_normalized;
 
@@ -130,5 +134,6 @@ namespace HoloProxies.Objects
         }
 
 
+#endif
     }
 }

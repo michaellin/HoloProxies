@@ -200,31 +200,12 @@ namespace HoloProxies.Engine
             if (lastenergy >= 0.5f && updateappearance)
             {
                 lableForegroundPixels( trackingState );
-                // TODO figure out how to recycle the histogram
+                frame.histogram.UpdateHistogramFromLabeledRGBD( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.PfVec );
             }
 
             state.setFrom( trackingState );
             state.energy = lastenergy;
 
-            //
-            //
-            //
-            //			// after convergence, the w channel of ptcloud is recycled for histogram update
-            //			if (lastenergy>=0.5f && updateappearance)
-            //			{
-            //				lableForegroundPixels(accpetedState);
-            //				frame->currentLevel->rgbd->UpdateHostFromDevice();
-            //				frame->histogram->updateHistogramFromLabeledRGBD(frame->currentLevel->rgbd, 0.3f, 0.1f);
-            //			}
-            //
-            //			//if (trackerState->numPoses() == 1 && lastenergy > 0.3f && lastenergy < 0.7f)
-            //			//{
-            //			//	fastReinitialize(lastenergy);
-            //			//}
-            //
-            //			trackerState->setFrom(*accpetedState);
-            //			trackerState->energy = lastenergy;
-            //			//printf("\tEnergy:%f", lastenergy);
         }
         #endregion
 
