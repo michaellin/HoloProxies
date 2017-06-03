@@ -188,7 +188,7 @@ namespace HoloProxies.Objects
 		// TODO
 		// Use the current bounding box to assign foreground pixels
 		// Everything else assign as background
-		// This updated the vector Mask
+		// This updates the vector Mask
 		public void LabelForegroundFromBoundingBox () {
 			//Mask = //
 		}
@@ -208,11 +208,40 @@ namespace HoloProxies.Objects
             return histogram[pidx];
         }
 
-        // TODO
         // Project current pose points and create a bounding box that we will use
 		// for the histogram
-		private void findBoundingBoxFromCurrentState()
+		private void findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state, Matrix4x4 K, Vector2 imgSize )
         {
+			Vector3[] corners = new Vector3[8];
+			Vector3[] ipts = new Vector3[state.numPoses () * 8];
+			UnityEngine.Vector4 bb = new UnityEngine.Vector4[imgSize.x, imgSize.y];
+			for (int i = -1, idx = 0; i <= 1; i += 2) {
+				for (int j = -1; j <= 1; j += 2) {
+					for (int k = -1; k <= 1; k += 2, idx++) {
+						corners [idx] = Vector3 (i * 0.1f, j * 0.1f, k * 0.1f);
+					}
+				}
+			}
+
+			for (int i = 0, idx = 0; i < state.numPoses (); i++) {
+				for (int j = 0; j < 8; j++, idx++) {
+					Matrix4x4 H = state.getPose ().getH ();
+					ipts [idx] = K * (H * corners [j]);
+					ipts [idx].x /= ipts [idx].z;   ipts [idx].y /= ipts [idx].z;
+
+					bb.x = ipts[idx].x < bb.x ? ipts[idx].x : bb.x;
+					bb.y = ipts[idx].y < bb.y ? ipts[idx].y : bb.y;
+					bb.z = ipts[idx].x > bb.z ? ipts[idx].x : bb.z;
+					bb.w = ipts[idx].y > bb.w ? ipts[idx].y : bb.w;
+				}
+			}
+
+			bb.x = bb.x < 0 ? 0 : bb.x; 
+			bb.y = bb.y < 0 ? 0 : bb.y;
+			bb.z = bb.z > imgSize.x ? imgSize.x : bb.z;
+			bb.w = bb.w > imgSize.y ? imgSize.y : bb.w;
+
+			return bb;
         }
 
         public void ComputePfImageFromHistogram()
