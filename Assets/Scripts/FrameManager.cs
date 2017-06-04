@@ -38,6 +38,8 @@ namespace HoloProxies.Objects
         public short[] Mask { get; private set; }
 
         public ushort[] DepthData { get; private set; }
+        public Texture2D DepthTexture { get; private set; }
+        private byte[] DepthRaw;
 
         public Matrix4x4 K;
 
@@ -70,6 +72,8 @@ namespace HoloProxies.Objects
                 DepthWidth = depthFrameDesc.Width;
                 DepthHeight = depthFrameDesc.Height;
                 DepthData = new ushort[depthFrameDesc.LengthInPixels];
+                DepthRaw = new byte[depthFrameDesc.LengthInPixels * 4];
+                DepthTexture = new Texture2D( DepthWidth, DepthHeight, TextureFormat.RGBA32, false );
 
                 // TODO
                 // Downsample all data frames if necessary
@@ -115,15 +119,37 @@ namespace HoloProxies.Objects
                     var colorFrame = frame.ColorFrameReference.AcquireFrame();
                     if (colorFrame != null)
                     {
+
                         var depthFrame = frame.DepthFrameReference.AcquireFrame();
                         if (depthFrame != null)
                         {
+
+                            // get color data + texture
                             colorFrame.CopyConvertedFrameDataToArray( ColorData, ColorImageFormat.Rgba );
                             ColorTexture.LoadRawTextureData( ColorData );
                             ColorTexture.Apply();
 
+                            // get depth data
                             depthFrame.CopyFrameDataToArray( DepthData );
 
+                            // Create a depth texture
+                            int index = 0;
+                            foreach (var ir in DepthData)
+                            {
+                                byte intensity = (byte)(ir >> 8);
+                                DepthRaw[index++] = intensity;
+                                DepthRaw[index++] = intensity;
+                                DepthRaw[index++] = intensity;
+                                DepthRaw[index++] = 255; // Alpha
+                            }
+                            DepthTexture.LoadRawTextureData( DepthRaw );
+                            DepthTexture.Apply();
+
+                            //Debug.Log( DepthRaw[0]);
+                            //Debug.Log( DepthRaw[350] );
+                            //Debug.Log( DepthRaw[100]);
+
+                            // dispose frame
                             depthFrame.Dispose();
                             depthFrame = null;
 
@@ -132,8 +158,6 @@ namespace HoloProxies.Objects
 
                             // Unproject to 3D points in camera space (based on bounding box)
                             PreparePointCloud( state );
-
-                            Debug.Log( "got here" );
                         }
 
                         colorFrame.Dispose();

@@ -129,7 +129,7 @@ namespace HoloProxies.Engine
             //			}
         }
 
-        public void TrackObjects( FrameManager frame, trackerState state, bool updateappearance )
+        public void TrackObjects( FrameManager frame, bool updateappearance )
         {
             // originally here was:
             //this->shapeUnion = shapeUnion;
@@ -143,8 +143,8 @@ namespace HoloProxies.Engine
             bool converged = false;
             float lambda = 10000.0f;
 
-            evaluateEnergy( out lastenergy, state );
-            if (lastenergy < 0.1f) { state.energy = 0; return; }
+            evaluateEnergy( out lastenergy, trackingState );
+            if (lastenergy < 0.1f) { trackingState.energy = 0; return; }
 
             /*** Levenberg-Marquardt ***/
 
@@ -190,7 +190,7 @@ namespace HoloProxies.Engine
                             }
                             lastenergy = currentenergy;
                             lambda *= TR_REGION_INCREASE;
-                            trackingState.setFrom( tempState );
+                            trackingState.setFrom( tempState ); // accept the converged state
                         }
                         else
                         {
@@ -210,8 +210,8 @@ namespace HoloProxies.Engine
 				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.Mask);
             }
 
-            state.setFrom( trackingState );
-            state.energy = lastenergy;
+            //state.setFrom( trackingState );
+            trackingState.energy = lastenergy;
 
         }
         #endregion

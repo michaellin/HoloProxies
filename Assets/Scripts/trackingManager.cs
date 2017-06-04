@@ -32,14 +32,14 @@ public class trackingManager : MonoBehaviour
         EXIT,
         PROCESS_PAUSED
     }
+
     private ManagerState currentState = ManagerState.PROCESS_PAUSED;
 
     private int processedFrameNo = 0;
 
     // Use this for initialization
-    void Start()
+    void Awake()
     {
-
         // Initialize all the important components here
         frame = new FrameManager();                            // does the frame grabs and frame processing from Kinect
         tracker = new trackerRGBD( numTrackingObj, sdfFiles ); // tracker performs the main tracking algorithm and keeps track of shapes
@@ -49,7 +49,6 @@ public class trackingManager : MonoBehaviour
 
         // Initialize a timer to keep track fo fps
         timer = new System.Diagnostics.Stopwatch();
-
     }
 
     // Update is called once per frame
@@ -120,17 +119,31 @@ public class trackingManager : MonoBehaviour
     /// </summary>
     private void ProcessFrame()
     {
-        timer.Start(); // Start a timer to measure fps
-        frame.UpdateFrame( tracker.trackingState );  //process frame
-        timer.Stop();
-        Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
-
+        if (processedFrameNo % 10 == 0)
+        {
+            timer.Start(); // Start a timer to measure fps
+            frame.UpdateFrame( tracker.trackingState );  //process frame
+            timer.Stop();
+            Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
+            timer.Reset();
+        }
         if (needStarTracker)
         {
-            tracker.TrackObjects( frame, tracker.trackingState, true ); // TODO may want to use false for update appearance instead
+            tracker.TrackObjects( frame, true ); // TODO may want to use false for update appearance instead
+            Debug.Log( tracker.trackingState.energy );
         }
     }
     #endregion
+
+    public Texture2D getColorFrame()
+    {
+        return frame.ColorTexture;
+    }
+
+    public Texture2D getDepthFrame()
+    {
+        return frame.DepthTexture;
+    }
 
 } // end trackingManager class
 
