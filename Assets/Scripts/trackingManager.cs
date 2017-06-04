@@ -119,15 +119,13 @@ public class trackingManager : MonoBehaviour
     /// </summary>
     private void ProcessFrame()
     {
-        if (processedFrameNo % 10 == 0)
-        {
-            timer.Start(); // Start a timer to measure fps
-            frame.UpdateFrame( tracker.trackingState );  //process frame
-            timer.Stop();
-            Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
-            timer.Reset();
-        }
-        if (needStarTracker)
+
+        timer.Start(); // Start a timer to measure fps
+        bool success = frame.UpdateFrame( tracker.trackingState );  //process frame
+        timer.Stop();
+        Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
+
+		if (needStarTracker && success)
         {
             tracker.TrackObjects( frame, true ); // TODO may want to use false for update appearance instead
             Debug.Log( tracker.trackingState.energy );
