@@ -48,7 +48,7 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to build a histogram from color and mask. These two are RGBA32 format.
         /// </summary>
-		public void BuildHistogram( ColorSpacePoint[] color, Texture2D colorTex, char[] Mask ) {
+		public void BuildHistogram( ColorSpacePoint[] color, Texture2D colorTex, short[] Mask ) {
 			int ru, gu, bu;
 			int pidx;
 
@@ -66,7 +66,7 @@ namespace HoloProxies.Objects
 					bu = (int) (pixel.b / BinsNumber);
 					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
                     
-                    char m = Mask[idx];
+                    short m = Mask[idx];
 					if (m == defines.HIST_FG_PIXEL) { // foreground pixel 
 						data_unnormalized [pidx].x++;
 						sumForeground++;

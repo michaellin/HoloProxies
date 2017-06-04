@@ -60,10 +60,10 @@ public class trackingManager : MonoBehaviour
 
         switch (currentState)
         {
-			case ManagerState.REINIT_HIST:
-				float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
-				tracker.trackingState.setHFromParam (poses, 0);
-				frame.ReinitHistogramFromRendering (tracker, defines.BB_MARGIN);
+            case ManagerState.REINIT_HIST:
+                float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
+                tracker.trackingState.setHFromParam( poses, 0 );
+                frame.ReinitHistogramFromRendering( tracker.trackingState );
                 needStarTracker = true;
                 currentState = ManagerState.PROCESS_VIDEO;
                 break;
@@ -110,7 +110,7 @@ public class trackingManager : MonoBehaviour
             Debug.Log( "Exiting..." );
         }
     }
-		
+
 
     #region coreEngine.cpp
     /// <summary>

@@ -245,7 +245,6 @@ namespace HoloProxies.Engine
                     e += es; totalpix++;
                     if (pfArray[i] > 0.5) totalpfpix++;
                 }
-
             }
 
             energy = totalpfpix > 100 ? e / totalpix : 0.0f;
@@ -507,7 +506,7 @@ namespace HoloProxies.Engine
             int count = frame.Width * frame.Height;
             float dt;
             for (int i = 0; i < count; i++)
-            	
+            {
 				// Keep track of useless pixels on the mask
 				if ( frame.DepthData [i] == defines.HIST_USELESS_PIXEL ) {
 					frame.Mask[i] = defines.HIST_USELESS_PIXEL;
@@ -526,12 +525,11 @@ namespace HoloProxies.Engine
         }
         #endregion
 
-        #region ISRRGBDtracker_shared
 
         // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
         // inpt is also been properly scaled to math the voxel resolution
         // inpt.w is pf for the point
-        float findPerPixelDT( CameraSpacePoint voxel, float pf, objectPose[] poses, int numObj )
+        private float findPerPixelDT( CameraSpacePoint voxel, float pf, objectPose[] poses, int numObj )
         {
             if (pf > 0)
             {
@@ -558,7 +556,6 @@ namespace HoloProxies.Engine
             }
         }
 
-        #endregion
 
     }
 }

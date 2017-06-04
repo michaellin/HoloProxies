@@ -14,7 +14,7 @@ namespace HoloProxies.Objects
     /// </summary>
     public class FrameManager
     {
-		public UnityEngine.Vector4 boundingbox;
+        public UnityEngine.Vector4 boundingbox;
 
         public int DownsampleSize = 1;
 
@@ -35,21 +35,21 @@ namespace HoloProxies.Objects
         public ColorSpacePoint[] ColorPoints { get; private set; }
         public byte[] ColorData { get; private set; }
 
-		public short[] Mask { get; private set; }
+        public short[] Mask { get; private set; }
 
         public ushort[] DepthData { get; private set; }
 
-		public Matrix4x4 K;
+        public Matrix4x4 K;
 
         // histogram used to keep track of the probability distribution of pixels
         public ColorHistogram histogram;
 
         private KinectSensor _Sensor;
         private MultiSourceFrameReader _Reader;
-        private CoordinateMapper _Mapper;    
+        private CoordinateMapper _Mapper;
 
         // Constructor
-        public FrameManager( )
+        public FrameManager()
         {
             _Sensor = KinectSensor.GetDefault();
 
@@ -69,11 +69,11 @@ namespace HoloProxies.Objects
                 var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
                 DepthWidth = depthFrameDesc.Width;
                 DepthHeight = depthFrameDesc.Height;
-                DepthData = new short[depthFrameDesc.LengthInPixels];
+                DepthData = new ushort[depthFrameDesc.LengthInPixels];
 
                 // TODO
                 // Downsample all data frames if necessary
-				SubsampleAndFilterRGBDImage();
+                SubsampleAndFilterRGBDImage();
 
                 // Set FrameWidth and FrameHeight to the downsampled size
                 Width = DepthWidth;
@@ -85,14 +85,14 @@ namespace HoloProxies.Objects
                 ColorPoints = new ColorSpacePoint[DepthWidth * DepthHeight];
                 Camera3DPoints = new CameraSpacePoint[DepthWidth * DepthHeight];
                 PfVec = new float[Width * Height];
-				Mask = new short[Width * Height];
+                Mask = new short[Width * Height];
 
                 // Save camera intrinsics matrix
-				CameraIntrinsics intrinsics = _Mapper.GetDepthCameraIntrinsics ();
-				K = new Matrix4x4 ();
-				K.m00 = intrinsics.FocalLengthX;    K.m01 = 0;                          K.m02 = intrinsics.PrincipalPointX;
-				K.m10 = 0;                          K.m11 = intrinsics.FocalLengthY;    K.m12 = intrinsics.PrincipalPointY;
-				K.m20 = 0;                          K.m21 = 0;                          K.m23 = 1;
+                CameraIntrinsics intrinsics = _Mapper.GetDepthCameraIntrinsics();
+                K = new Matrix4x4();
+                K.m00 = intrinsics.FocalLengthX; K.m01 = 0; K.m02 = intrinsics.PrincipalPointX;
+                K.m10 = 0; K.m11 = intrinsics.FocalLengthY; K.m12 = intrinsics.PrincipalPointY;
+                K.m20 = 0; K.m21 = 0; K.m23 = 1;
 
                 // Initialize color histogram
                 histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
@@ -105,7 +105,7 @@ namespace HoloProxies.Objects
 
         }
 
-		public void UpdateFrame(HoloProxies.Engine.trackerState state)
+        public void UpdateFrame( HoloProxies.Engine.trackerState state )
         {
             if (_Reader != null)
             {
@@ -121,7 +121,7 @@ namespace HoloProxies.Objects
                             colorFrame.CopyConvertedFrameDataToArray( ColorData, ColorImageFormat.Rgba );
                             ColorTexture.LoadRawTextureData( ColorData );
                             ColorTexture.Apply();
-                            
+
                             depthFrame.CopyFrameDataToArray( DepthData );
 
                             depthFrame.Dispose();
@@ -130,8 +130,8 @@ namespace HoloProxies.Objects
                             // Map depth to RGBD
                             AlignRGBD();
 
-							// Unproject to 3D points in camera space (based on bounding box)
-                            PreparePointCloud(state);
+                            // Unproject to 3D points in camera space (based on bounding box)
+                            PreparePointCloud( state );
                         }
 
                         colorFrame.Dispose();
@@ -142,32 +142,33 @@ namespace HoloProxies.Objects
             }
         }
 
-		/// <summary>
-		/// Given a color space point with x,y coordinates of a pixel location
-		/// return the corresponding rgb pixel 
-		/// </summary>
-		/// <returns>The pixel value.</returns>
-		/// <param name="pt">Point.</param>
-		public Color GetPixelValue( ColorSpacePoint pt ) {
-			return ColorTexture.GetPixel ((int) pt.X, (int) pt.Y);
-		}
+        /// <summary>
+        /// Given a color space point with x,y coordinates of a pixel location
+        /// return the corresponding rgb pixel 
+        /// </summary>
+        /// <returns>The pixel value.</returns>
+        /// <param name="pt">Point.</param>
+        public Color GetPixelValue( ColorSpacePoint pt )
+        {
+            return ColorTexture.GetPixel( (int)pt.X, (int)pt.Y );
+        }
 
-		/// <summary>
-		/// Creates a lookup list ColorPoints that map DepthData to ColorData
-		/// </summary>
+        /// <summary>
+        /// Creates a lookup list ColorPoints that map DepthData to ColorData
+        /// </summary>
         private void AlignRGBD()
         {
             // Stores RGB points
             _Mapper.MapDepthFrameToColorSpace( DepthData, ColorPoints );
         }
 
-		/// <summary>
-		/// Gets 3D points [units = meters] and calculated pf vector
-		/// </summary>
-		/// <param name="state">State.</param>
-		private void PreparePointCloud( HoloProxies.Engine.trackerState state )
+        /// <summary>
+        /// Gets 3D points [units = meters] and calculated pf vector
+        /// </summary>
+        /// <param name="state">State.</param>
+        private void PreparePointCloud( HoloProxies.Engine.trackerState state )
         {
-			boundingbox = findBoundingBoxFromCurrentState ( state );
+            boundingbox = findBoundingBoxFromCurrentState( state );
 
             // Stores 3D point cloud
             _Mapper.MapDepthFrameToCameraSpace( DepthData, Camera3DPoints );
@@ -191,45 +192,47 @@ namespace HoloProxies.Objects
                     else
                     {
                         // calculate pf
-						PfVec[idx] = GetPf( GetPixelValue(ColorPoints[idx]) );
+                        PfVec[idx] = GetPf( GetPixelValue( ColorPoints[idx] ) );
                     }
                 }
             } //end for
         }
-			
 
-		/// <summary>
-		/// Re-initializes the histogram based on current state. 
-		/// Based on the pose, projects a foreground bounding box (everything 
-		/// else is background) and stores it in Mask. Only the foreground pixels 
-		/// are used to create the histogram.
-		/// </summary>
-		/// <param name="state">State.</param>
-		/// <param name="bbmargin">Bbmargin.</param>
-		public void ReinitHistogramFromRendering( HoloProxies.Engine.trackerState state, int bbmargin ) {
-			LabelMaskFromCurrentStateBoundingBox ( state, bbmargin );
-			histogram.BuildHistogram (ColorPoints, ColorTexture, Mask);
-		}
 
-		// TODO do we want to Downsample? Currently, this is only filtering 
-		// out pixels with <= 0 depth.
-		/// <summary>
-		/// Downsamples the image.
-		/// </summary>
-        private void SubsampleAndFilterRGBDImage()
+        /// <summary>
+        /// Re-initializes the histogram based on current state. 
+        /// Based on the pose, projects a foreground bounding box (everything 
+        /// else is background) and stores it in Mask. Only the foreground pixels 
+        /// are used to create the histogram.
+        /// </summary>
+        /// <param name="state">State.</param>
+        public void ReinitHistogramFromRendering( HoloProxies.Engine.trackerState state )
         {
-			// filter for zero depth pixels
-			for (int i = 0; i < (Width * Height); i++) {
-				if (DepthData [i] <= 0) {
-					DepthData [i] = defines.HIST_USELESS_PIXEL;
-				}
-			}
+            LabelMaskFromCurrentStateBoundingBox( state );
+            histogram.BuildHistogram( ColorPoints, ColorTexture, Mask );
         }
 
-		/// <summary>
-		/// Gets the pf.
-		/// </summary>
-		/// <param name="pixel">Pixel.</param>
+        // TODO do we want to Downsample? Currently, this is only filtering 
+        // out pixels with <= 0 depth.
+        /// <summary>
+        /// Downsamples the image.
+        /// </summary>
+        private void SubsampleAndFilterRGBDImage()
+        {
+            // filter for zero depth pixels
+            for (int i = 0; i < (Width * Height); i++)
+            {
+                if (DepthData[i] <= 0)
+                {
+                    DepthData[i] = defines.HIST_USELESS_PIXEL;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the pf.
+        /// </summary>
+        /// <param name="pixel">Pixel.</param>
         private float GetPf( Color pixel )
         {
             int ru, gu, bu;
@@ -241,93 +244,103 @@ namespace HoloProxies.Objects
             return histogram.posterior[pidx];
         }
 
-		// TODO
-		/// <summary>
-		/// Use the current bounding box to assign foreground pixels
-		/// Everything else assign as background
-		/// This updates the vector Mask
-		/// </summary>
-		private void LabelMaskFromCurrentStateBoundingBox ( HoloProxies.Engine.trackerState state ) 
-		{
-			// first get bounding box for foreground pixels
-			boundingbox = findBoundingBoxFromCurrentState (state);
-
-			//  (x,y) ----- +
-			//    |         |
-			//    |         |
-			//    + ----- (z,w)
-			// set the near background bounding box
-			UnityEngine.Vector4 boundingboxBG = 
-				new UnityEngine.Vector4(boundingbox.x - defines.BB_MARGIN, //top, left
-					boundingbox.y - defines.BB_MARGIN, 
-					boundingbox.z + defines.BB_MARGIN, //bottom, right
-					boundingbox.w + defines.BB_MARGIN);
-
-			for (int i = 0; i < Height; i++)
-			{
-				for (int j = 0; j < Width; j++)
-				{
-					int idx = i * Width + j;
-
-					if (DepthData [i] == defines.HIST_USELESS_PIXEL) {
-						Mask [i] = defines.HIST_USELESS_PIXEL;
-					} else {
-						// if point is in the foreground bounding box
-						if ( j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w) {
-							Mask [idx] = defines.HIST_FG_PIXEL;
-						}
-						// else if it is in the near background
-						else if (j > boundingboxBG.x && j < boundingboxBG.z && i > boundingboxBG.y && i < boundingboxBG.w) {
-							Mask [idx] = defines.HIST_BG_PIXEL;
-						}
-					}
-				}
-			} //end for
-		}
-
-		/// <summary>
-		/// Finds the state of the bounding box from current.
-		/// Project current pose points and create a bounding box that we will use 
-		/// for the histogram
-		/// </summary>
-		/// <param name="state">State.</param>
-		private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state )
+        // TODO
+        /// <summary>
+        /// Use the current bounding box to assign foreground pixels
+        /// Everything else assign as background
+        /// This updates the vector Mask
+        /// </summary>
+        private void LabelMaskFromCurrentStateBoundingBox( HoloProxies.Engine.trackerState state )
         {
-			Vector3[] corners = new Vector3[8];
-			Vector3[] ipts = new Vector3[state.numPoses () * 8];
-			UnityEngine.Vector4 bb = new UnityEngine.Vector4(Width, Height, 0, 0);
-			for (int i = -1, idx = 0; i <= 1; i += 2) {
-				for (int j = -1; j <= 1; j += 2) {
-					for (int k = -1; k <= 1; k += 2, idx++) {
-						corners [idx] = new Vector3 (i * 0.1f, j * 0.1f, k * 0.1f);
-					}
-				}
-			}
+            // first get bounding box for foreground pixels
+            boundingbox = findBoundingBoxFromCurrentState( state );
 
-			for (int i = 0, idx = 0; i < state.numPoses (); i++) {
-				for (int j = 0; j < 8; j++, idx++) {
-					Matrix4x4 H = state.getPose (i).getH ();
-					ipts [idx] = K * (H * corners [j]);
-					ipts [idx].x /= ipts [idx].z;   ipts [idx].y /= ipts [idx].z;
+            //  (x,y) ----- +
+            //    |         |
+            //    |         |
+            //    + ----- (z,w)
+            // set the near background bounding box
+            UnityEngine.Vector4 boundingboxBG =
+                new UnityEngine.Vector4( boundingbox.x - defines.BB_MARGIN, //top, left
+                    boundingbox.y - defines.BB_MARGIN,
+                    boundingbox.z + defines.BB_MARGIN, //bottom, right
+                    boundingbox.w + defines.BB_MARGIN );
 
-					bb.x = ipts[idx].x < bb.x ? ipts[idx].x : bb.x;
-					bb.y = ipts[idx].y < bb.y ? ipts[idx].y : bb.y;
-					bb.z = ipts[idx].x > bb.z ? ipts[idx].x : bb.z;
-					bb.w = ipts[idx].y > bb.w ? ipts[idx].y : bb.w;
-				}
-			}
+            for (int i = 0; i < Height; i++)
+            {
+                for (int j = 0; j < Width; j++)
+                {
+                    int idx = i * Width + j;
 
-			bb.x = bb.x < 0 ? 0 : bb.x; 
-			bb.y = bb.y < 0 ? 0 : bb.y;
-			bb.z = bb.z > Width ? Width : bb.z;
-			bb.w = bb.w > Height ? Height : bb.w;
-
-			return bb;
+                    if (DepthData[i] == defines.HIST_USELESS_PIXEL)
+                    {
+                        Mask[i] = defines.HIST_USELESS_PIXEL;
+                    }
+                    else
+                    {
+                        // if point is in the foreground bounding box
+                        if (j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w)
+                        {
+                            Mask[idx] = defines.HIST_FG_PIXEL;
+                        }
+                        // else if it is in the near background
+                        else if (j > boundingboxBG.x && j < boundingboxBG.z && i > boundingboxBG.y && i < boundingboxBG.w)
+                        {
+                            Mask[idx] = defines.HIST_BG_PIXEL;
+                        }
+                    }
+                }
+            } //end for
         }
 
-		/// <summary>
-		/// Computes the pf image from histogram. Used for visualization.
-		/// </summary>
+        /// <summary>
+        /// Finds the state of the bounding box from current.
+        /// Project current pose points and create a bounding box that we will use 
+        /// for the histogram
+        /// </summary>
+        /// <param name="state">State.</param>
+        private UnityEngine.Vector4 findBoundingBoxFromCurrentState( HoloProxies.Engine.trackerState state )
+        {
+            Vector3[] corners = new Vector3[8];
+            Vector3[] ipts = new Vector3[state.numPoses() * 8];
+            UnityEngine.Vector4 bb = new UnityEngine.Vector4( Width, Height, 0, 0 );
+            for (int i = -1, idx = 0; i <= 1; i += 2)
+            {
+                for (int j = -1; j <= 1; j += 2)
+                {
+                    for (int k = -1; k <= 1; k += 2, idx++)
+                    {
+                        corners[idx] = new Vector3( i * 0.1f, j * 0.1f, k * 0.1f );
+                    }
+                }
+            }
+
+            for (int i = 0, idx = 0; i < state.numPoses(); i++)
+            {
+                for (int j = 0; j < 8; j++, idx++)
+                {
+                    Matrix4x4 H = state.getPose( i ).getH();
+                    ipts[idx] = K * (H * corners[j]);
+                    ipts[idx].x /= ipts[idx].z; ipts[idx].y /= ipts[idx].z;
+
+                    bb.x = ipts[idx].x < bb.x ? ipts[idx].x : bb.x;
+                    bb.y = ipts[idx].y < bb.y ? ipts[idx].y : bb.y;
+                    bb.z = ipts[idx].x > bb.z ? ipts[idx].x : bb.z;
+                    bb.w = ipts[idx].y > bb.w ? ipts[idx].y : bb.w;
+                }
+            }
+
+            bb.x = bb.x < 0 ? 0 : bb.x;
+            bb.y = bb.y < 0 ? 0 : bb.y;
+            bb.z = bb.z > Width ? Width : bb.z;
+            bb.w = bb.w > Height ? Height : bb.w;
+
+            return bb;
+        }
+
+        /// <summary>
+        /// Computes the pf image from histogram. Used for visualization.
+        /// </summary>
         public void ComputePfImageFromHistogram()
         {
             int noBins = histogram.BinsNumber;
@@ -339,7 +352,7 @@ namespace HoloProxies.Objects
                 {
 
                     int idx = i * Width + Height;
-                    Color pixel = ColorTexture.GetPixel( (int) ColorPoints[idx].X, (int) ColorPoints[idx].Y );
+                    Color pixel = ColorTexture.GetPixel( (int)ColorPoints[idx].X, (int)ColorPoints[idx].Y );
                     pf = GetPf( pixel );
                     if (pf > 0.5f)
                     {
