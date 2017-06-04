@@ -500,10 +500,9 @@ namespace HoloProxies.Engine
             float dt;
             for (int i = 0; i < count; i++)
             {
-                if (frame.Camera3DPoints[i].Z > 0) // if inside the bb and has depth
+                if (frame.PfVec[i] > 0) // if inside the bb and has depth
                 {
-                    //TODO
-                    //dt = findPerPixelDT( frame.Camera3DPoints[i], shapes.GetShapeList(), objectPose pose, defines.NUM_OBJ );
+                    dt = findPerPixelDT( frame.Camera3DPoints[i], frame.PfVec[i], state.getPoseList(), defines.NUM_OBJ );
                     if (Mathf.Abs( dt ) <= 5) {
                         frame.Mask[i] = defines.HIST_FG_PIXEL;
                     } else
@@ -511,39 +510,40 @@ namespace HoloProxies.Engine
                         frame.Mask[i] = defines.HIST_BG_PIXEL;
                     }
                 }
-
             }
         }
         #endregion
 
         #region ISRRGBDtracker_shared
 
-        // TODO
         // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
         // inpt is also been properly scaled to math the voxel resolution
         // inpt.w is pf for the point
-        float findPerPixelDT( UnityEngine.Vector4 pixel, shapeSDF shape, objectPose pose, int numObj )
+        float findPerPixelDT( CameraSpacePoint voxel, float pf, objectPose[] poses, int numObj )
         {
-            //			if (inpt.w > 0)
-            //			{
-            //				float dt = MAX_SDF, partdt = MAX_SDF;
-            //				int idx;
-            //				float *voxelBlocks;
-            //
-            //				for (int i = 0; i < numObj; i++)
-            //				{
-            //					Vector3f objpt = poses[i].getInvH()*Vector3f(inpt.x, inpt.y, inpt.z);
-            //					idx = pt2IntIdx(objpt);
-            //					if (idx >= 0)
-            //					{
-            //						voxelBlocks = shapes[i].getSDFVoxel();
-            //						partdt = voxelBlocks[idx];
-            //						dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
-            //					}
-            //				}
-            //				return dt;
-            //			}
-            //			else return MAX_SDF;
+            if (pf > 0)
+            {
+                float dt = defines.MAX_SDF;
+                float partdt = defines.MAX_SDF;
+                int idx;
+                float[] voxelBlocks;
+
+                for (int i = 0; i < numObj; i++)
+                {
+                    Vector3 objpt = poses[i].getInvH() * (new Vector3( voxel.X, voxel.Y, voxel.Z ));
+                    idx = pt2IntIdx( objpt );
+                    if (idx >= 0)
+                    {
+                        voxelBlocks = shapes[i].getSDFVoxels();
+                        partdt = voxelBlocks[idx];
+                        dt = partdt < dt ? partdt : dt;
+                    }
+                }
+                return dt;
+            } else
+            {
+                return defines.MAX_SDF;
+            }
         }
 
         #endregion
