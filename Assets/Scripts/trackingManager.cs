@@ -47,7 +47,7 @@ public class trackingManager : MonoBehaviour
         //engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ), DT_VOL_SIZE );
 
         // Initialize all the important components here
-        frame = new FrameManager(  );
+        frame = new FrameManager();
         tracker = new trackerRGBD( numTrackingObj );
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
@@ -65,7 +65,7 @@ public class trackingManager : MonoBehaviour
             case ManagerState.REINIT_HIST:
                 float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
                 tracker.trackingState.setHFromParam( poses, 0 );
-                //updateHistogramFromRendering() // TODO - seems like only needed for display purposes
+                updateHistogramFromRendering();
                 needStarTracker = true;
                 currentState = ManagerState.PROCESS_VIDEO;
                 break;
@@ -113,22 +113,27 @@ public class trackingManager : MonoBehaviour
         }
     }
 
-    //void inline updateHistogramFromRendering(UChar4Image* rendering, UChar4Image* rgb, LibISR::Objects::ISRHistogram* hist)
-    //{
-    //	Vector4u* imgptr = rendering->GetData(MEMORYDEVICE_CPU);
-    //	Vector4u bpix((uchar)0);
-    //	for (int i = 0; i < rendering->dataSize;i++)
-    //		if (imgptr[i] != bpix) imgptr[i] = Vector4u(255,255,255,255);
-    //		else imgptr[i] = Vector4u(100, 100, 100, 100);
-    //	
-    //	hist->buildHistogram(rgb, rendering);
-    //}
+
+
+    private void updateHistogramFromRendering( UChar4Image* rendering, UChar4Image* rgb, LibISR::Objects::ISRHistogram* hist )
+    {
+        //Vector4u* imgptr = rendering->GetData( MEMORYDEVICE_CPU );
+        //Vector4u bpix((uchar)0);
+        //for (int i = 0; i < rendering->dataSize; i++)
+        //    if (imgptr[i] != bpix) imgptr[i] = Vector4u( 255, 255, 255, 255 );
+        //    else imgptr[i] = Vector4u( 100, 100, 100, 100 );
+
+        //hist->buildHistogram( rgb, rendering );
+    }
     private void updateHistogramFromRendering()
     {
 
     }
 
     #region coreEngine.cpp
+    /// <summary>
+    /// ProcessFrame is the highest level function loop that call the rest of the tracking
+    /// </summary>
     private void ProcessFrame()
     {
         // Start a timer to measure fps

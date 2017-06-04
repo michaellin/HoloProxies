@@ -200,7 +200,7 @@ namespace HoloProxies.Engine
             if (lastenergy >= 0.5f && updateappearance)
             {
                 lableForegroundPixels( trackingState );
-                frame.histogram.UpdateHistogramFromLabeledRGBD( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.PfVec );
+                frame.histogram.UpdateHistogramFromLabeledRGBD( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.DepthData );
             }
 
             state.setFrom( trackingState );
@@ -344,7 +344,8 @@ namespace HoloProxies.Engine
 
         /// <summary>
         /// Helper function to compute the jacobian. ptCloud is in camera reference frame and needs to be converted using the pose invH to object coordinates.
-        /// pfVec is the probability of each voxel (matches in index)
+        /// pfVec is the probability of each voxel (matches in index). input now is in camera coordinates, it need to be transformed by pose invH to object coordinates
+        /// input is also been properly scaled to math the voxel resolution.
         /// </summary>
         /// <param name="jacobian"></param>
         /// <param name="ptcloud"></param>
@@ -489,265 +490,35 @@ namespace HoloProxies.Engine
 
 
         #region ISRRGBDtracker_CPU.cpp
-        //void evaluateEnergy( out float energy, trackerState state )
-        //{
-        //    energy = 0; // TODO
-        //printf( "CPU energy\n" );
-        //int count = this->frame->ptCloud->dataSize;
-        //Vector4f* ptcloud_ptr = this->frame->ptCloud->GetData( MEMORYDEVICE_CPU );
-
-        //ISRShape_ptr shapes = this->shapeUnion->getShapeList( false );
-        //ISRPose_ptr poses = trackerState->getPoseList( false );
-        //int objCount = trackerState->numPoses();
-
-        //float e = 0, es = 0;
-        //int totalpix = 0;
-        //int totalpfpix = 0;
-
-        //for (int i = 0; i < count; i++)
-        //{
-        //    es = computePerPixelEnergy( ptcloud_ptr[i], shapes, poses, objCount );
-        //    if (es > 0)
-        //    {
-        //        e += es; totalpix++;
-        //        if (ptcloud_ptr[i].w > 0.5) totalpfpix++;
-        //    }
-
-        //}
-
-        //energy[0] = totalpfpix > 100 ? e / totalpix : 0.0f;
-        //}
-
-        //void computeJacobianAndHessian(out float gradient, out float hessian, trackerState state) 
-        //{
-        //			int count = this->frame->ptCloud->dataSize;
-        //			Vector4f* ptcloud_ptr = this->frame->ptCloud->GetData(MEMORYDEVICE_CPU);
-        //
-        //			ISRShape_ptr shapes = this->shapeUnion->getShapeList(false);
-        //			ISRPose_ptr poses = trackerState->getPoseList(false);
-        //			int objCount = trackerState->numPoses();
-        //
-        //			int noPara = trackerState->numPoses() * 6;
-        //			int noParaSQ = noPara*noPara;
-        //
-        //			float *globalGradient = new float[noPara];
-        //			float *globalHessian = new float[noParaSQ];
-        //			float *jacobian = new float[noPara];
-        //
-        //			for (int i = 0; i < noPara; i++) globalGradient[i] = 0.0f;
-        //			for (int i = 0; i < noParaSQ; i++) globalHessian[i] = 0.0f;
-        //
-        //			for (int i = 0; i < count; i++)
-        //			{
-        //				if (computePerPixelJacobian(jacobian, ptcloud_ptr[i], shapes, poses, objCount))
-        //				{
-        //					for (int a = 0, counter = 0; a < noPara; a++) 	
-        //					{
-        //						globalGradient[a] += jacobian[a];
-        //						for (int b = 0; b <= a; b++, counter++) globalHessian[counter] += jacobian[a] * jacobian[b];
-        //					}
-        //				}
-        //			}
-        //
-        //			for (int r = 0; r < noPara; ++r) gradient[r] = globalGradient[r];
-        //
-        //			for (int r = 0, counter = 0; r < noPara; r++) for (int c = 0; c <= r; c++, counter++) hessian[r + c * noPara] = globalHessian[counter];
-        //			for (int r = 0; r < noPara; ++r) for (int c = r + 1; c < noPara; c++) hessian[r + c * noPara] = hessian[c + r*noPara];
-        //}
-
+        /// <summary>
+        /// lableForegroundPixels to label pixels as forground or background for better processing :)
+        /// </summary>
+        /// <param name="state"></param>
         void lableForegroundPixels( trackerState state )
         {
-            //			int count = this->frame->ptCloud->dataSize;
-            //			Vector4f* ptcloud_ptr = this->frame->ptCloud->GetData(MEMORYDEVICE_CPU);
-            //			Vector4f* rgbd_ptr = this->frame->currentLevel->rgbd->GetData(MEMORYDEVICE_CPU);
-            //
-            //			ISRShape_ptr shapes = this->shapeUnion->getShapeList(false);
-            //			ISRPose_ptr poses = trackerState->getPoseList(false);
-            //			int objCount = trackerState->numPoses();
-            //
-            //			float dt;
-            //			int totalpix = 0;
-            //
-            //			for (int i = 0; i < count; i++)
-            //			{
-            //				if (ptcloud_ptr[i].w > 0) // in the bounding box and have depth
-            //				{
-            //					dt = findPerPixelDT(ptcloud_ptr[i], shapes, poses,objCount);
-            //					if (fabs(dt) <= 5) { rgbd_ptr[i].w = HIST_FG_PIXEL; }
-            //					else { rgbd_ptr[i].w = HIST_BG_PIXEL; }
-            //				}
-            //				//else
-            //				//{
-            //				//	rgbd_ptr[i].w = HIST_BG_PIXEL;
-            //				//}
-            //			}	
+            int count = frame.Width * frame.Height;
+            float dt;
+            for (int i = 0; i < count; i++)
+            {
+                if (frame.Camera3DPoints[i].Z > 0) // if inside the bb and has depth
+                {
+                    //TODO
+                    //dt = findPerPixelDT( frame.Camera3DPoints[i], shapes.GetShapeList(), objectPose pose, defines.NUM_OBJ );
+                    if (Mathf.Abs( dt ) <= 5) {
+                        frame.Mask[i] = defines.HIST_FG_PIXEL;
+                    } else
+                    {
+                        frame.Mask[i] = defines.HIST_BG_PIXEL;
+                    }
+                }
+
+            }
         }
         #endregion
 
         #region ISRRGBDtracker_shared
-        // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
-        // inpt is also been properly scaled to math the voxel resolution
-        // inpt.w is pf for the point
-        //float computerPerPixelEnergy( Vector4 pixel, shapeSDF shape, objectPose pose, int numObj )
-        //{
-        //			// printf("shared energy\n");
-        //			if (inpt.w > 0)
-        //			{
-        //				float dt = MAX_SDF, partdt = MAX_SDF;
-        //				int idx;
-        //				float *voxelBlocks;
-        //
-        //				for (int i = 0; i < numObj; i++)
-        //				{
-        //					Vector3f objpt = poses[i].getInvH()*Vector3f(inpt.x, inpt.y, inpt.z);
-        //					idx = pt2IntIdx(objpt);
-        //					if (idx >= 0)
-        //					{
-        //						voxelBlocks = shapes[i].getSDFVoxel();
-        //						partdt = voxelBlocks[idx];
-        //						dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
-        //						// printf("dt: %f \n", dt);
-        //					}
-        //				}
-        //
-        //				if (dt == MAX_SDF) return -1.0f;
-        //
-        //				float exp_dt = expf(-dt * DTUNE);
-        //				float deto = exp_dt + 1.0f;
-        //				float sheaviside = 1.0f / deto;
-        //				float sdelta = 4.0f* exp_dt * sheaviside * sheaviside;
-        //				float e = inpt.w * sdelta*TMP_WEIGHT + (1 - inpt.w)*sheaviside*(2-TMP_WEIGHT);
-        //				return e;
-        //			}
-        //			else return 0.0f;
-        //}
 
-        // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
-        // inpt is also been properly scaled to math the voxel resolution
-        // inpt.w is pf for the point
-        //bool computePerPixelJacobian( out float jacobian, Vector4 pixel, shapeSDF[] shapes, objectPose pose, int numObj )
-        //{
-        //			if (inpt.w < 0) return false;
-        //
-        //			float dt = MAX_SDF, partdt = MAX_SDF;
-        //			int idx, minidx;
-        //			float *voxelBlocks, *minVoxelBlocks;
-        //			Vector3f pt(inpt.x, inpt.y, inpt.z), minpt;
-        //			Vector3f ddt;
-        //			bool minfound = false, ddtfound = false;
-        //
-        //			for (int i = 0; i < numObj; i++)
-        //			{
-        //				Vector3f objpt = poses[i].getInvH()*pt;
-        //				idx = pt2IntIdx(objpt);
-        //
-        //				if (idx >= 0)
-        //				{
-        //					voxelBlocks = shapes[i].getSDFVoxel();
-        //					partdt = voxelBlocks[idx];
-        //
-        //					if (partdt < dt)
-        //					{
-        //						minidx = i;
-        //						minpt = objpt;
-        //						minfound = true;
-        //						minVoxelBlocks = voxelBlocks;
-        //
-        //						dt = partdt;
-        //					}
-        //				}
-        //			}
-        //			if (!minfound) return false;
-        //
-        //			ddt = getSDFNormal(minpt, minVoxelBlocks, ddtfound);
-        //			if (!ddtfound) return false;
-        //
-        //			float exp_dt = expf(-dt * DTUNE);
-        //			float deto = exp_dt + 1.0f;
-        //			float dbase = exp_dt / (deto * deto);
-        //
-        //			float d_heaviside_dt = dbase * DTUNE;
-        //			float d_delta_dt = 8.0f *DTUNE* expf(-2 * DTUNE*dt) / (deto * deto* deto) - 4 * DTUNE * dbase;
-        //
-        //			float prefix = inpt.w*d_delta_dt*TMP_WEIGHT + (1 - inpt.w)*d_heaviside_dt*(2-TMP_WEIGHT);
-        //
-        //			ddt *= prefix;
-        //
-        //			for (int i = 0; i < numObj * 6; i++) jacobian[i] = 0;
-        //			int idxoffset = minidx * 6;
-        //
-        //			jacobian[idxoffset + 0] = ddt.x;
-        //			jacobian[idxoffset + 1] = ddt.y;
-        //			jacobian[idxoffset + 2] = ddt.z;
-        //			jacobian[idxoffset + 3] = 4.0f * (ddt.z * minpt.y - ddt.y * minpt.z);
-        //			jacobian[idxoffset + 4] = 4.0f * (ddt.x * minpt.z - ddt.z * minpt.x);
-        //			jacobian[idxoffset + 5] = 4.0f * (ddt.y * minpt.x - ddt.x * minpt.y);
-        //
-        //			return true;
-        //}
-
-        // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
-        // inpt is also been properly scaled to math the voxel resolution
-        // inpt.w is pf for the point
-        bool computePerPixelJacobian( out float jacobian, UnityEngine.Vector4 pixel, shapeSDF shape, objectPose pose, int numObj, float prefix )
-        {
-            //			if (inpt.w < 0) return false;
-            //
-            //			float dt = MAX_SDF, partdt = MAX_SDF;
-            //			int idx, minidx;
-            //			float *voxelBlocks, *minVoxelBlocks;
-            //			Vector3f pt(inpt.x, inpt.y, inpt.z), minpt;
-            //			Vector3f ddt;
-            //			bool minfound = false, ddtfound = false;
-            //
-            //			for (int i = 0; i < numObj; i++)
-            //			{
-            //				Vector3f objpt = poses[i].getInvH()*pt;
-            //				idx = pt2IntIdx(objpt);
-            //
-            //				if (idx >= 0)
-            //				{
-            //					voxelBlocks = shapes[i].getSDFVoxel();
-            //					partdt = voxelBlocks[idx];
-            //
-            //					if (partdt < dt)
-            //					{
-            //						minidx = i;
-            //						minpt = objpt;
-            //						minfound = true;
-            //						minVoxelBlocks = voxelBlocks;
-            //
-            //						dt = partdt;
-            //					}
-            //				}
-            //			}
-            //			if (!minfound) return false;
-            //
-            //			ddt = getSDFNormal(minpt, minVoxelBlocks, ddtfound);
-            //			if (!ddtfound) return false;
-            //
-            //			float exp_dt = expf(-dt * DTUNE);
-            //			float deto = exp_dt + 1.0f;
-            //			float dbase = exp_dt / (deto * deto);
-            //
-            //			float d_heaviside_dt = dbase * DTUNE;
-            //			float d_delta_dt = 8.0f *DTUNE* expf(-2 * DTUNE*dt) / (deto * deto* deto) - 4 * DTUNE * dbase;
-            //
-            //			prefix = inpt.w*d_delta_dt*TMP_WEIGHT + (1 - inpt.w)*d_heaviside_dt*(2 - TMP_WEIGHT);
-            //
-            //			for (int i = 0; i < numObj * 6; i++) jacobian[i] = 0;
-            //			int idxoffset = minidx * 6;
-            //
-            //			jacobian[idxoffset + 0] = ddt.x;
-            //			jacobian[idxoffset + 1] = ddt.y;
-            //			jacobian[idxoffset + 2] = ddt.z;
-            //			jacobian[idxoffset + 3] = 4.0f * (ddt.z * minpt.y - ddt.y * minpt.z);
-            //			jacobian[idxoffset + 4] = 4.0f * (ddt.x * minpt.z - ddt.z * minpt.x);
-            //			jacobian[idxoffset + 5] = 4.0f * (ddt.y * minpt.x - ddt.x * minpt.y);
-            //
-            //			return true;
-        }
-
+        // TODO
         // inpt now is in camera coordinates, it need to be transformed by pose invH to object coordinates
         // inpt is also been properly scaled to math the voxel resolution
         // inpt.w is pf for the point
