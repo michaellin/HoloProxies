@@ -96,7 +96,7 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to build a histogram from RGBD. Input format is RGBAFloat.
         /// </summary>
-		public void BuildHistogramFromLabeledRGBD( ColorSpacePoint[] color, Texture2D colorTex, float[] pf ) {
+		public void BuildHistogramFromLabeledRGBD( ColorSpacePoint[] color, Texture2D colorTex, ushort[] depth ) {
 			int ru, gu, bu;
 			int pidx;
 
@@ -111,7 +111,7 @@ namespace HoloProxies.Objects
 
 					ColorSpacePoint pt = color [idx];
 					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
-					float w = pf [idx];
+					float w = depth[idx];
 
 					if ( w >= defines.HIST_USELESS_PIXEL )
 						continue;
@@ -157,10 +157,10 @@ namespace HoloProxies.Objects
         /// </summary>
         /// <param name="rf"></param>
         /// <param name="rb"></param>
-		public void UpdateHistogramFromLabeledRGBD(float rf, float rb, ColorSpacePoint[] color, Texture2D colorTex, float[] pf)
+		public void UpdateHistogramFromLabeledRGBD(float rf, float rb, ColorSpacePoint[] color, Texture2D colorTex, ushort[] DepthData)
 		{
 			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.FrameWidth, this.FrameHeight);
-			this.BuildHistogramFromLabeledRGBD (color, colorTex, pf);
+			this.BuildHistogramFromLabeledRGBD (color, colorTex, DepthData);
 			this.UpdateHistogram (tmpHist, rf, rb);
 		}
 

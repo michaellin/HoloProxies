@@ -35,7 +35,7 @@ namespace HoloProxies.Objects
         public ColorSpacePoint[] ColorPoints { get; private set; }
         public byte[] ColorData { get; private set; }
 
-		public Color[] Mask { get; private set; }
+		public short[] Mask { get; private set; }
 
         public ushort[] DepthData { get; private set; }
 
@@ -84,7 +84,7 @@ namespace HoloProxies.Objects
                 ColorPoints = new ColorSpacePoint[DepthWidth * DepthHeight];
                 Camera3DPoints = new CameraSpacePoint[DepthWidth * DepthHeight];
                 PfVec = new float[Width * Height];
-				Mask = new Color[Width * Height];
+				Mask = new short[Width * Height];
 
                 // Save camera intrinsics matrix
 				CameraIntrinsics intrinsics = _Mapper.GetDepthCameraIntrinsics ();
@@ -120,7 +120,7 @@ namespace HoloProxies.Objects
                             colorFrame.CopyConvertedFrameDataToArray( ColorData, ColorImageFormat.Rgba );
                             ColorTexture.LoadRawTextureData( ColorData );
                             ColorTexture.Apply();
-
+                            
                             depthFrame.CopyFrameDataToArray( DepthData );
 
                             depthFrame.Dispose();
