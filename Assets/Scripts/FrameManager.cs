@@ -221,7 +221,7 @@ namespace HoloProxies.Objects
 			// filter for zero depth pixels
 			for (int i = 0; i < (Width * Height); i++) {
 				if (DepthData [i] <= 0) {
-					DepthData [i] = defines.HIST_USELESS_PIXEL;
+					Mask [i] = defines.HIST_USELESS_PIXEL;
 				}
 			}
         }
