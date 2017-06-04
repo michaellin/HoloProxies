@@ -501,17 +501,14 @@ namespace HoloProxies.Engine
 		/// This labeling is done on the frame Mask
         /// </summary>
         /// <param name="state"></param>
-        void lableMaskForegroundPixels( trackerState state )
+        void labelMaskForegroundPixels( trackerState state )
         {
             int count = frame.Width * frame.Height;
             float dt;
             for (int i = 0; i < count; i++)
-            {
-				// Keep track of useless pixels on the mask
-				if ( frame.DepthData [i] == defines.HIST_USELESS_PIXEL ) {
-					frame.Mask[i] = defines.HIST_USELESS_PIXEL;
-				} 
-				else if (frame.PfVec[i] > 0) // if inside the bb and has depth
+            {      	
+				// Keep track of useless pixels on the mask and check if we're inside the bb
+				if ( (frame.Mask [i] != defines.HIST_USELESS_PIXEL) && (frame.PfVec[i] > 0)) 
                 {
                     dt = findPerPixelDT( frame.Camera3DPoints[i], frame.PfVec[i], state.getPoseList(), defines.NUM_OBJ );
                     if (Mathf.Abs( dt ) <= 5) {
