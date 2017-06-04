@@ -105,8 +105,15 @@ namespace HoloProxies.Objects
 
         }
 
-        public void UpdateFrame( HoloProxies.Engine.trackerState state )
+		/// <summary>
+		/// Updates the frame by grabbing the rgb and depth from the Kinnect.
+		/// </summary>
+		/// <returns><c>true</c>, if frame was successfully updated, <c>false</c> otherwise.</returns>
+		/// <param name="state">State.</param>
+		public bool UpdateFrame( HoloProxies.Engine.trackerState state )
         {
+			bool success = false;
+
             if (_Reader != null)
             {
                 var frame = _Reader.AcquireLatestFrame();
@@ -133,15 +140,15 @@ namespace HoloProxies.Objects
                             // Unproject to 3D points in camera space (based on bounding box)
                             PreparePointCloud( state );
 
-                            Debug.Log( "got here" );
+							success = true;
                         }
-
                         colorFrame.Dispose();
                         colorFrame = null;
                     }
                     frame = null;
                 }
             }
+			return success;
         }
 
         /// <summary>
