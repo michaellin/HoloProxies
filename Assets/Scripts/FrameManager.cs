@@ -73,6 +73,7 @@ namespace HoloProxies.Objects
 
                 // TODO
                 // Downsample all data frames if necessary
+				SubsampleAndFilterRGBDImage();
 
                 // Set FrameWidth and FrameHeight to the downsampled size
                 Width = DepthWidth;
@@ -202,17 +203,46 @@ namespace HoloProxies.Objects
 		/// Everything else assign as background
 		/// This updates the vector Mask
 		/// </summary>
-		public void LabelForegroundFromBoundingBox () 
+		public void LabelForegroundFromStateBoundingBox ( HoloProxies.Engine.trackerState state, int bbmargin ) 
 		{
-			//Mask = //
+			// first get bounding box for foreground pixels
+			findBoundingBoxFromCurrentState (state);
+
+			// set the near background bounding box
+			UnityEngine.Vector4 boundingboxBG = new UnityEngine.Vector4(boundingbox.x, boundingbox.y, boundingbox.z, boundingbox.w);
+			boundingboxBG += bbmargin;
+
+			for (int i = 0; i < Height; i++)
+			{
+				for (int j = 0; j < Width; j++)
+				{
+					int idx = i * Width + j;
+					// if point is in the foreground bounding box
+					if (j > boundingbox.x || j < boundingbox.z || i > boundingbox.y || i < boundingbox.w)
+					{
+						Mask [idx] = defines.HIST_FG_PIXEL;
+					}
+					// else if it is in the near background
+					else if (j > boundingboxBG.x || j < boundingboxBG.z || i > boundingboxBG.y || i < boundingboxBG.w)
+					{
+						Mask [idx] = defines.HIST_BG_PIXEL;
+					}
+				}
+			} //end for
 		}
 
 		// TODO do we want to Downsample?
 		/// <summary>
 		/// Downsamples the image.
 		/// </summary>
-        private void DownsampleImage()
+        private void SubsampleAndFilterRGBDImage()
         {
+			// filter for zero depth pixels
+			for (int i = 0; i < (Width * Height); i++) {
+				if (DepthData [i] <= 0) {
+					DepthData [i] = defines.HIST_USELESS_PIXEL;
+				}
+			}
         }
 
 		/// <summary>
