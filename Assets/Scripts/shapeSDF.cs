@@ -28,6 +28,7 @@ namespace HoloProxies.Objects {
         {
             srcFile = fileName;
             volSize = new Vector3( defines.DT_VOL_SIZE, defines.DT_VOL_SIZE, defines.DT_VOL_SIZE );
+            dt = new float[defines.DT_VOL_3DSIZE];
             if (File.Exists( srcFile ))
             {
                 using (BinaryReader reader = new BinaryReader( File.Open( srcFile, FileMode.Open ) ))

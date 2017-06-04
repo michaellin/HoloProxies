@@ -29,7 +29,8 @@ namespace HoloProxies.Engine
         {
             energy = 0;
             nPose = num;
-            poses = new objectPose[num];
+            poses = new objectPose[nPose];
+            for (int i = 0; i < nPose; i ++) { poses[i] = new objectPose(); }
             shapes = new shapeSDF[defines.NUM_OBJ];
         }
 
@@ -88,7 +89,7 @@ namespace HoloProxies.Engine
         /// </summary>
         public void setHFromParam( float[] param, int id )
         {
-			poses[id].setHFromParam(param);
+            poses[id].setHFromParam(param);
         }
 
         /// <summary>

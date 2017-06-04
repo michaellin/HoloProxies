@@ -19,13 +19,9 @@ public class trackingManager : MonoBehaviour
     private trackerRGBD tracker;          // tracker that implements the pose estimation algorithm
     private bool needStarTracker = true;  // turn on or off tracking
 
-
     private string[] sdfFiles = { "Data/bin/teacan.bin" };
-    //private coreEngine engine;
-    //private int[] engineSettings = { histogramNBins, numTrackingObj };
-    //private MultiSourceManager msm;
 
-    //public GameObject sourceManager;
+    private System.Diagnostics.Stopwatch timer;
 
     // states for the tracking Manager state machine
     private enum ManagerState : byte
@@ -49,7 +45,11 @@ public class trackingManager : MonoBehaviour
         tracker = new trackerRGBD( numTrackingObj, sdfFiles ); // tracker performs the main tracking algorithm and keeps track of shapes
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
-        tracker.trackingState.setHFromParam( poses, 0 );
+        tracker.trackingState.setHFromParam( poses, 0 );       // setting the state of object 1 only
+
+        // Initialize a timer to keep track fo fps
+        timer = new System.Diagnostics.Stopwatch();
+
     }
 
     // Update is called once per frame
@@ -104,6 +104,8 @@ public class trackingManager : MonoBehaviour
         else if (Input.GetKeyDown( KeyCode.B ))
         {
             Debug.Log( "Processing video" );
+            currentState = ManagerState.PROCESS_VIDEO;
+
         }
         else if (Input.GetKeyDown( KeyCode.E ))
         {
@@ -118,16 +120,15 @@ public class trackingManager : MonoBehaviour
     /// </summary>
     private void ProcessFrame()
     {
-        // Start a timer to measure fps
-        System.Diagnostics.Stopwatch timer;
-
-        frame.UpdateFrame( tracker.trackingState );
+        timer.Start(); // Start a timer to measure fps
+        frame.UpdateFrame( tracker.trackingState );  //process frame
+        timer.Stop();
+        Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
 
         if (needStarTracker)
         {
             tracker.TrackObjects( frame, tracker.trackingState, true ); // TODO may want to use false for update appearance instead
         }
-
     }
     #endregion
 

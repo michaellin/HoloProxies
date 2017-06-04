@@ -31,8 +31,4 @@ sysinfo.txt
 *.unitypackage
 
 # Mac stuff
-<<<<<<< HEAD
-*.Icon\?*
-=======
 *Icon\?*
->>>>>>> fe648dc3dc2939a82e81b1e9278716a3f30a1764

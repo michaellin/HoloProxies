@@ -12,7 +12,7 @@ public class unitTests : MonoBehaviour {
         objectPose pose1 = new objectPose();
         Assert.AreEqual( pose1.getH(), new Matrix4x4() );
         Assert.AreEqual( pose1.getInvH(), new Matrix4x4() );
-        Matrix4x4 testM = new Matrix4x4();
+        //Matrix4x4 testM = new Matrix4x4();
         
     }
 	

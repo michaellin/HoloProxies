@@ -205,9 +205,9 @@ namespace HoloProxies.Engine
             // after convergence, the pf of the pointcloud is recycled for histogram update
             if (lastenergy >= 0.5f && updateappearance)
             {
-				lableMaskForegroundPixels( trackingState );
+				labelMaskForegroundPixels( trackingState );
 				// TODO change this to use Mask instead - DONE
-				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.DepthData, frame.Mask);
+				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.Mask);
             }
 
             state.setFrom( trackingState );

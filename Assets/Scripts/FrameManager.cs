@@ -132,6 +132,8 @@ namespace HoloProxies.Objects
 
                             // Unproject to 3D points in camera space (based on bounding box)
                             PreparePointCloud( state );
+
+                            Debug.Log( "got here" );
                         }
 
                         colorFrame.Dispose();
@@ -270,11 +272,8 @@ namespace HoloProxies.Objects
                 {
                     int idx = i * Width + j;
 
-                    if (DepthData[i] == defines.HIST_USELESS_PIXEL)
-                    {
-                        Mask[i] = defines.HIST_USELESS_PIXEL;
-                    }
-                    else
+                    // if it's not a zero depth pixel i.e. useless
+                    if (Mask[i] != defines.HIST_USELESS_PIXEL)
                     {
                         // if point is in the foreground bounding box
                         if (j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w)
@@ -341,14 +340,11 @@ namespace HoloProxies.Objects
         /// </summary>
         public void ComputePfImageFromHistogram()
         {
-            int noBins = histogram.BinsNumber;
             float pf = 0;
-
             for (int i = 0; i < Height; i++)
             {
                 for (int j = 0; j < Width; j++)
                 {
-
                     int idx = i * Width + Height;
                     Color pixel = ColorTexture.GetPixel( (int)ColorPoints[idx].X, (int)ColorPoints[idx].Y );
                     pf = GetPf( pixel );
