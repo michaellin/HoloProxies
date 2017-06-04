@@ -196,42 +196,23 @@ namespace HoloProxies.Objects
                 }
             } //end for
         }
+			
 
-		// TODO
 		/// <summary>
-		/// Use the current bounding box to assign foreground pixels
-		/// Everything else assign as background
-		/// This updates the vector Mask
+		/// Re-initializes the histogram based on current state. 
+		/// Based on the pose, projects a foreground bounding box (everything 
+		/// else is background) and stores it in Mask. Only the foreground pixels 
+		/// are used to create the histogram.
 		/// </summary>
-		public void LabelForegroundFromStateBoundingBox ( HoloProxies.Engine.trackerState state, int bbmargin ) 
-		{
-			// first get bounding box for foreground pixels
-			findBoundingBoxFromCurrentState (state);
-
-			// set the near background bounding box
-			UnityEngine.Vector4 boundingboxBG = new UnityEngine.Vector4(boundingbox.x, boundingbox.y, boundingbox.z, boundingbox.w);
-			boundingboxBG += bbmargin;
-
-			for (int i = 0; i < Height; i++)
-			{
-				for (int j = 0; j < Width; j++)
-				{
-					int idx = i * Width + j;
-					// if point is in the foreground bounding box
-					if (j > boundingbox.x || j < boundingbox.z || i > boundingbox.y || i < boundingbox.w)
-					{
-						Mask [idx] = defines.HIST_FG_PIXEL;
-					}
-					// else if it is in the near background
-					else if (j > boundingboxBG.x || j < boundingboxBG.z || i > boundingboxBG.y || i < boundingboxBG.w)
-					{
-						Mask [idx] = defines.HIST_BG_PIXEL;
-					}
-				}
-			} //end for
+		/// <param name="state">State.</param>
+		/// <param name="bbmargin">Bbmargin.</param>
+		public void ReinitHistogramFromRendering( HoloProxies.Engine.trackerState state, int bbmargin ) {
+			LabelMaskFromCurrentStateBoundingBox ( state, bbmargin );
+			histogram.BuildHistogram (ColorPoints, ColorTexture, Mask);
 		}
 
-		// TODO do we want to Downsample?
+		// TODO do we want to Downsample? Currently, this is only filtering 
+		// out pixels with <= 0 depth.
 		/// <summary>
 		/// Downsamples the image.
 		/// </summary>
@@ -259,6 +240,50 @@ namespace HoloProxies.Objects
             int pidx = ru * noBins * noBins + gu * noBins + bu;
             return histogram.posterior[pidx];
         }
+
+		// TODO
+		/// <summary>
+		/// Use the current bounding box to assign foreground pixels
+		/// Everything else assign as background
+		/// This updates the vector Mask
+		/// </summary>
+		private void LabelMaskFromCurrentStateBoundingBox ( HoloProxies.Engine.trackerState state ) 
+		{
+			// first get bounding box for foreground pixels
+			boundingbox = findBoundingBoxFromCurrentState (state);
+
+			//  (x,y) ----- +
+			//    |         |
+			//    |         |
+			//    + ----- (z,w)
+			// set the near background bounding box
+			UnityEngine.Vector4 boundingboxBG = 
+				new UnityEngine.Vector4(boundingbox.x - defines.BB_MARGIN, //top, left
+					boundingbox.y - defines.BB_MARGIN, 
+					boundingbox.z + defines.BB_MARGIN, //bottom, right
+					boundingbox.w + defines.BB_MARGIN);
+
+			for (int i = 0; i < Height; i++)
+			{
+				for (int j = 0; j < Width; j++)
+				{
+					int idx = i * Width + j;
+
+					if (DepthData [i] == defines.HIST_USELESS_PIXEL) {
+						Mask [i] = defines.HIST_USELESS_PIXEL;
+					} else {
+						// if point is in the foreground bounding box
+						if ( j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w) {
+							Mask [idx] = defines.HIST_FG_PIXEL;
+						}
+						// else if it is in the near background
+						else if (j > boundingboxBG.x && j < boundingboxBG.z && i > boundingboxBG.y && i < boundingboxBG.w) {
+							Mask [idx] = defines.HIST_BG_PIXEL;
+						}
+					}
+				}
+			} //end for
+		}
 
 		/// <summary>
 		/// Finds the state of the bounding box from current.
