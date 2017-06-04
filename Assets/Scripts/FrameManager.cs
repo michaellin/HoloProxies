@@ -219,14 +219,12 @@ namespace HoloProxies.Objects
         /// </summary>
         private void SubsampleAndFilterRGBDImage()
         {
-            // filter for zero depth pixels
-            for (int i = 0; i < (Width * Height); i++)
-            {
-                if (DepthData[i] <= 0)
-                {
-                    DepthData[i] = defines.HIST_USELESS_PIXEL;
-                }
-            }
+			// filter for zero depth pixels
+			for (int i = 0; i < (Width * Height); i++) {
+				if (DepthData [i] == 0) {
+					Mask [i] = defines.HIST_USELESS_PIXEL;
+				}
+			}
         }
 
         /// <summary>
