@@ -72,7 +72,6 @@ namespace HoloProxies.Engine
 
         /// <summary>
         /// Function to set this trackerState from another trackerState.
-        /// TOOD
         /// </summary>
         public void setFrom( trackerState inposes )
         {
@@ -86,7 +85,6 @@ namespace HoloProxies.Engine
 
         /// <summary>
         /// Function to set H of each pose from the given param.
-        /// TOOD
         /// </summary>
         public void setHFromParam( float[] param, int id )
         {
@@ -95,7 +93,6 @@ namespace HoloProxies.Engine
 
         /// <summary>
         /// Function to set invH of each pose from the given param.
-        /// TOOD
         /// </summary>
         public void setInvHFromParam( float[] param, int id )
         {

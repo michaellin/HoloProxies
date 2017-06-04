@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using System;
+using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,14 +19,28 @@ namespace HoloProxies.Objects {
         // 3-Dimensional array of floats that contains the SDF values.
         public float[] dt;       // Allow others to directly access this variale. Should be read only
         public Vector3 volSize;
+        public string srcFile;
 
         /// <summary>
         /// Class constructor should initialize the shape_buffer. 
         /// </summary>
-        public shapeSDF()
+        public shapeSDF(string fileName)
         {
+            srcFile = fileName;
             volSize = new Vector3( defines.DT_VOL_SIZE, defines.DT_VOL_SIZE, defines.DT_VOL_SIZE );
-            // TODO define a shape to start with. Make a sphere for now.
+            if (File.Exists( srcFile ))
+            {
+                using (BinaryReader reader = new BinaryReader( File.Open( srcFile, FileMode.Open ) ))
+                {
+                    for (int i = 0; i < defines.DT_VOL_3DSIZE; i ++)
+                    {
+                        dt[i] = reader.ReadSingle();
+                    }
+                }
+            } else
+            {
+                Debug.Log( "Invalid path to SDF :" + srcFile );
+            }
         }
 
         /// <summary>

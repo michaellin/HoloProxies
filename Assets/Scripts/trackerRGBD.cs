@@ -16,7 +16,6 @@ namespace HoloProxies.Engine
     /// The trackerRGBD class implements all the algorithm of computing the energy function and minimizing it using
     /// Levenberg-Marquardt.
     /// File from: ISRRGBDTracker.cpp/.h, ISRTracker.h, ISRRGBDTracker_CPU.cpp/.h, ISRRGBDTracker_shared.h
-    /// TODO unfinished
     /// </summary>
     public class trackerRGBD
     {
@@ -54,9 +53,16 @@ namespace HoloProxies.Engine
         float[] ATb;
 
         #region ISRRGBtracker.cpp
-        public trackerRGBD( int nObjs )
+        public trackerRGBD( int nObjs, string[] fileNames )
         {
             nObjects = nObjs;
+
+            shapes = new shapeSDF[nObjects];
+            for (int i = 0; i < nObjects; i ++)
+            {
+                shapes[i] = new shapeSDF( fileNames[i] );
+            }
+
             ATb_size = nObjs * 6;
             ATA_size = ATb_size * ATb_size;
 
@@ -123,7 +129,7 @@ namespace HoloProxies.Engine
             //			}
         }
 
-        public void TrackObjects( FrameManager frame, shapeSDF[] shapeUnion, trackerState state, bool updateappearance )
+        public void TrackObjects( FrameManager frame, trackerState state, bool updateappearance )
         {
             // originally here was:
             //this->shapeUnion = shapeUnion;
@@ -317,7 +323,7 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], shapes, poses, objCount ))
+                if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], poses, objCount ))
                 {
                     for (int a = 0, counter = 0; a < paramNum; a++)
                     {
@@ -355,7 +361,7 @@ namespace HoloProxies.Engine
         /// <param name="poses"></param>
         /// <param name="numObj"></param>
         /// <returns></returns>
-        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVal, shapeSDF[] shapes, objectPose[] poses, int numObj )
+        private bool computePerPixelJacobian( out float[] jacobian, CameraSpacePoint ptcloud, float pfVal, objectPose[] poses, int numObj )
         {
             jacobian = new float[numObj * 6];
             if (pfVal < 0) { return false; }
@@ -373,7 +379,7 @@ namespace HoloProxies.Engine
             {
                 Vector3 objpt = poses[i].getInvH() * pt;
                 idx = pt2IntIdx( objpt );
-                // TODO
+
                 if (idx >= 0)
                 {
                     voxelBlocks = shapes[i].getSDFVoxels();

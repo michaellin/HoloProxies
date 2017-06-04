@@ -19,6 +19,8 @@ public class trackingManager : MonoBehaviour
     private trackerRGBD tracker;          // tracker that implements the pose estimation algorithm
     private bool needStarTracker = true;  // turn on or off tracking
 
+
+    private string[] sdfFiles = { "Data/bin/teacan.bin" };
     //private coreEngine engine;
     //private int[] engineSettings = { histogramNBins, numTrackingObj };
     //private MultiSourceManager msm;
@@ -41,12 +43,10 @@ public class trackingManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //// Start off the main engine
-        //engine = new coreEngine( engineSettings, new Vector2i( msm.DepthWidth, msm.DepthHeight ), new Vector2i( msm.ColorWidth, msm.ColorHeight ), DT_VOL_SIZE );
 
         // Initialize all the important components here
-        frame = new FrameManager();
-        tracker = new trackerRGBD( numTrackingObj );
+        frame = new FrameManager();                            // does the frame grabs and frame processing from Kinect
+        tracker = new trackerRGBD( numTrackingObj, sdfFiles ); // tracker performs the main tracking algorithm and keeps track of shapes
 
         float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
         tracker.trackingState.setHFromParam( poses, 0 );
