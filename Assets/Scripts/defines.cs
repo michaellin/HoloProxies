@@ -30,5 +30,9 @@ namespace HoloProxies.Utils
         public const int WHITE = 255;
         public const int BLACK = 0;
 
+
+		public const int BB_MARGIN = 5;
+
+
     }
 }

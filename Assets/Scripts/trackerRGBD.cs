@@ -205,8 +205,9 @@ namespace HoloProxies.Engine
             // after convergence, the pf of the pointcloud is recycled for histogram update
             if (lastenergy >= 0.5f && updateappearance)
             {
-                lableForegroundPixels( trackingState );
-                frame.histogram.UpdateHistogramFromLabeledRGBD( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.DepthData );
+				lableMaskForegroundPixels( trackingState );
+				// TODO change this to use Mask instead - DONE
+				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.DepthData, frame.Mask);
             }
 
             state.setFrom( trackingState );
@@ -498,15 +499,20 @@ namespace HoloProxies.Engine
         #region ISRRGBDtracker_CPU.cpp
         /// <summary>
         /// lableForegroundPixels to label pixels as forground or background for better processing :)
+		/// This labeling is done on the frame Mask
         /// </summary>
         /// <param name="state"></param>
-        void lableForegroundPixels( trackerState state )
+        void lableMaskForegroundPixels( trackerState state )
         {
             int count = frame.Width * frame.Height;
             float dt;
             for (int i = 0; i < count; i++)
-            {
-                if (frame.PfVec[i] > 0) // if inside the bb and has depth
+            	
+				// Keep track of useless pixels on the mask
+				if ( frame.DepthData [i] == defines.HIST_USELESS_PIXEL ) {
+					frame.Mask[i] = defines.HIST_USELESS_PIXEL;
+				} 
+				else if (frame.PfVec[i] > 0) // if inside the bb and has depth
                 {
                     dt = findPerPixelDT( frame.Camera3DPoints[i], frame.PfVec[i], state.getPoseList(), defines.NUM_OBJ );
                     if (Mathf.Abs( dt ) <= 5) {

@@ -67,19 +67,16 @@ namespace HoloProxies.Objects
 					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
                     
                     char m = Mask[idx];
-                    if (m == defines.HIST_FG_PIXEL) // foreground is white
-                    {
-                        data_normalized[pidx].x++;
-                        sumForeground++;
-                    } else if (m == defines.HIST_BG_PIXEL ) // far background is black
-                    {
-                    }
-                    else // other colors are immediate background
-                    {
-                        data_normalized[pidx].y++;
-                        sumBackground++;
-                    }
-
+					if (m == defines.HIST_FG_PIXEL) { // foreground pixel 
+						data_unnormalized [pidx].x++;
+						sumForeground++;
+					} else if (m == defines.HIST_BG_PIXEL) { // background 
+						data_unnormalized [pidx].y++;
+						sumBackground++;
+					} else if (m == defines.HIST_USELESS_PIXEL) { // useless pixels
+					} else { // any other color is far background
+					}
+						
 				}
 			}
 
@@ -87,12 +84,15 @@ namespace HoloProxies.Objects
 			sumBackground = (sumBackground != 0) ? 1.0f/sumBackground : 0;
 
 			for ( int i=0; i<dim; i++) {
-				data_normalized[i].x = data_normalized[i].x + sumForeground + 0.0001f;
-				data_normalized[i].y = data_normalized[i].y + sumBackground + 0.0001f;
+				data_normalized[i].x = data_unnormalized[i].x + sumForeground + 0.0001f;
+				data_normalized[i].y = data_unnormalized[i].y + sumBackground + 0.0001f;
 				posterior[i] = data_normalized[i].x / (data_normalized[i].x + data_normalized[i].y);
 			}
 		}
 
+		// TODO - this method is deprecated
+		// Since we won't follow the convention of labeling the RGBD image
+		// Instead we will label the mask
         /// <summary>
         /// Function to build a histogram from RGBD. Input format is RGBAFloat.
         /// </summary>
@@ -126,17 +126,18 @@ namespace HoloProxies.Objects
 					switch ( (int)w ) {
 
 					case defines.HIST_FG_PIXEL: // foreground pixel
-						data_normalized [pidx].x++;
+						data_unnormalized [pidx].x++;
 						sumForeground++;
 						break;
 
 					case defines.HIST_BG_PIXEL: // background pixel
-						data_normalized [pidx].y++;
+						data_unnormalized [pidx].y++;
 						sumBackground++;
 						break;
 
 					default: 
 						break;
+
 					}
 				}
 			}
@@ -145,12 +146,13 @@ namespace HoloProxies.Objects
 			sumBackground = (sumBackground != 0) ? 1.0f/sumBackground : 0;
 
 			for ( int i=0; i<dim; i++) {
-				data_normalized[i].x = data_normalized[i].x + sumForeground + 0.0001f;
-				data_normalized[i].y = data_normalized[i].y + sumBackground + 0.0001f;
+				data_normalized[i].x = data_unnormalized[i].x + sumForeground + 0.0001f;
+				data_normalized[i].y = data_unnormalized[i].y + sumBackground + 0.0001f;
 				posterior[i] = data_normalized[i].x / (data_normalized[i].x + data_normalized[i].y);
 			}
 		}
 
+		// TODO - deprecated, should be using mask instead
         /// <summary>
         /// Function to update a histogram from RGBD at rates rf and rb. This can call buildHistogramFromLabelledRGBD
         /// and updateHistogram. Input format is RGBAFloat.
@@ -161,6 +163,19 @@ namespace HoloProxies.Objects
 		{
 			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.FrameWidth, this.FrameHeight);
 			this.BuildHistogramFromLabeledRGBD (color, colorTex, DepthData);
+			this.UpdateHistogram (tmpHist, rf, rb);
+		}
+
+		/// <summary>
+		/// Function to update a histogram from RGBD at rates rf and rb. 
+		/// The labeling is done on the frame Mask before this function call.
+		/// </summary>
+		/// <param name="rf"></param>
+		/// <param name="rb"></param>
+		public void UpdateHistogramFromLabeledMask(float rf, float rb, ColorSpacePoint[] color, Texture2D colorTex, short[] Mask)
+		{
+			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.FrameWidth, this.FrameHeight);
+			this.BuildHistogram (color, colorTex, Mask);
 			this.UpdateHistogram (tmpHist, rf, rb);
 		}
 

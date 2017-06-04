@@ -60,10 +60,10 @@ public class trackingManager : MonoBehaviour
 
         switch (currentState)
         {
-            case ManagerState.REINIT_HIST:
-                float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
-                tracker.trackingState.setHFromParam( poses, 0 );
-                updateHistogramFromRendering();
+			case ManagerState.REINIT_HIST:
+				float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
+				tracker.trackingState.setHFromParam (poses, 0);
+				frame.ReinitHistogramFromRendering (tracker, defines.BB_MARGIN);
                 needStarTracker = true;
                 currentState = ManagerState.PROCESS_VIDEO;
                 break;
@@ -110,23 +110,7 @@ public class trackingManager : MonoBehaviour
             Debug.Log( "Exiting..." );
         }
     }
-
-
-
-    private void updateHistogramFromRendering( UChar4Image* rendering, UChar4Image* rgb, LibISR::Objects::ISRHistogram* hist )
-    {
-        //Vector4u* imgptr = rendering->GetData( MEMORYDEVICE_CPU );
-        //Vector4u bpix((uchar)0);
-        //for (int i = 0; i < rendering->dataSize; i++)
-        //    if (imgptr[i] != bpix) imgptr[i] = Vector4u( 255, 255, 255, 255 );
-        //    else imgptr[i] = Vector4u( 100, 100, 100, 100 );
-
-        //hist->buildHistogram( rgb, rendering );
-    }
-    private void updateHistogramFromRendering()
-    {
-
-    }
+		
 
     #region coreEngine.cpp
     /// <summary>
