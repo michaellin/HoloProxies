@@ -69,7 +69,7 @@ namespace HoloProxies.Objects
                 var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
                 DepthWidth = depthFrameDesc.Width;
                 DepthHeight = depthFrameDesc.Height;
-                DepthData = new ushort[depthFrameDesc.LengthInPixels];
+                DepthData = new short[depthFrameDesc.LengthInPixels];
 
                 // TODO
                 // Downsample all data frames if necessary
