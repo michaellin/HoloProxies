@@ -69,7 +69,7 @@ public class trackingManager : MonoBehaviour
                 tracker.trackingState.setHFromParam( initPose, 0 );
                 frame.ReinitHistogramFromRendering( tracker.trackingState );
                 needStarTracker = true;
-                currentState = ManagerState.PROCESS_VIDEO;
+                currentState = ManagerState.PROCESS_PAUSED;
                 break;
 
             case ManagerState.PROCESS_FRAME:

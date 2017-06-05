@@ -51,7 +51,7 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Function to build a histogram from color and mask. These two are RGBA32 format.
         /// </summary>
-		public void BuildHistogram( ColorSpacePoint[] color, Texture2D colorTex, short[] Mask ) {
+		public void BuildHistogram( Texture2D colorTex, short[] Mask ) {
 			int ru, gu, bu;
 			int pidx;
 
@@ -59,11 +59,10 @@ namespace HoloProxies.Objects
 			float sumBackground = 0;
 
 
-			for (int j = 0; j < FrameHeight; j++) {
-				for (int i = 0; i < FrameWidth; i++) {
-					int idx = i + j * FrameWidth;
-					ColorSpacePoint pt = color [idx];
-					Color pixel = colorTex.GetPixel ((int) pt.X, (int) pt.Y);
+			for (int i = 0; i < FrameHeight; i++) {
+				for (int j = 0; j < FrameWidth; j++) {
+					int idx = j + i * FrameWidth;
+					Color pixel = colorTex.GetPixel ( j, i );
 					ru = (int) (pixel.r / BinsNumber);
 					gu = (int) (pixel.g / BinsNumber);
 					bu = (int) (pixel.b / BinsNumber);
@@ -105,10 +104,10 @@ namespace HoloProxies.Objects
 		/// </summary>
 		/// <param name="rf"></param>
 		/// <param name="rb"></param>
-		public void UpdateHistogramFromLabeledMask(float rf, float rb, ColorSpacePoint[] color, Texture2D colorTex, short[] Mask)
+		public void UpdateHistogramFromLabeledMask(float rf, float rb, Texture2D colorTex, short[] Mask)
 		{
 			ColorHistogram tmpHist = new ColorHistogram(this.BinsNumber, this.FrameWidth, this.FrameHeight);
-			this.BuildHistogram (color, colorTex, Mask);
+			this.BuildHistogram (colorTex, Mask);
 			this.UpdateHistogram (tmpHist, rf, rb);
 		}
 

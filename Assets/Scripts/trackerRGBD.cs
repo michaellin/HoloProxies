@@ -149,6 +149,9 @@ namespace HoloProxies.Engine
             Debug.Log( "did get here" );
             /*** Levenberg-Marquardt ***/
 
+            computeJacobianAndHessian( ATb, ATA, tempState ); // TODO Michael put here to test
+            return;
+
             const int MAX_STEPS = 100;
             const float MIN_STEP = 0.00005f;
             const float MIN_DECREASE = 0.0001f;
@@ -209,7 +212,7 @@ namespace HoloProxies.Engine
                 Debug.Log( "converged" );
 				labelMaskForegroundPixels( trackingState );
 				// TODO change this to use Mask instead - DONE
-				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.Mask);
+				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorTexture, frame.Mask);
             }
 
             //state.setFrom( trackingState );
@@ -360,6 +363,7 @@ namespace HoloProxies.Engine
         /// <param name="tracker"></param>
         private void computeJacobianAndHessian( float[] gradient, float[] hessian, trackerState tracker )
         {
+
             int count = frame.Camera3DPoints.Length;
             CameraSpacePoint[] ptcloud = frame.Camera3DPoints; // 3D voxels in meters
             float[] pfArray = frame.PfVec; // pf of each voxel
@@ -378,15 +382,19 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], poses, objCount ))
+                if (pfArray[i] != defines.OUTSIDE_BB)
                 {
-                    for (int a = 0, counter = 0; a < paramNum; a++)
+                    if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], poses, objCount ))
                     {
-                        globalGradient[a] += jacobian[a];
-                        for (int b = 0; b <= a; b++, counter++) globalHessian[counter] += jacobian[a] * jacobian[b];
+                        for (int a = 0, counter = 0; a < paramNum; a++)
+                        {
+                            globalGradient[a] += jacobian[a];
+                            for (int b = 0; b <= a; b++, counter++) { globalHessian[counter] += jacobian[a] * jacobian[b]; }
+                        }
                     }
                 }
             }
+            return;
 
             Array.Copy( globalGradient, gradient, paramNum );
             for (int r = 0, counter = 0; r < paramNum; r ++) {

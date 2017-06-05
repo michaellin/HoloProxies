@@ -27,18 +27,23 @@ namespace HoloProxies.Objects
         public int DepthWidth { get; private set; }
         public int DepthHeight { get; private set; }
 
+        public CameraSpacePoint[] Camera3DPoints_full { get; private set; }
         public CameraSpacePoint[] Camera3DPoints { get; private set; }
         public float[] PfVec { get; private set; }
         public Texture2D PfImage { get; private set; }
 
+        public Texture2D ColorTexture_full { get; private set; }
         public Texture2D ColorTexture { get; private set; }
+        public ColorSpacePoint[] ColorPoints_full { get; private set; }
         public ColorSpacePoint[] ColorPoints { get; private set; }
+        public byte[] ColorData_full { get; private set; }
         public byte[] ColorData { get; private set; }
 
         public short[] Mask { get; private set; }
 
+        public ushort[] DepthData_full { get; private set; }
         public ushort[] DepthData { get; private set; }
-        public Texture2D DepthTexture { get; private set; }
+        public Texture2D DepthTexture_full { get; private set; }
         private byte[] DepthRaw;
 
         public Matrix4x4 K;
@@ -64,32 +69,33 @@ namespace HoloProxies.Objects
 
                 _Reader = _Sensor.OpenMultiSourceFrameReader( FrameSourceTypes.Color | FrameSourceTypes.Depth );
 
-                var colorFrameDesc = _Sensor.ColorFrameSource.CreateFrameDescription( ColorImageFormat.Rgba );
-                ColorWidth = colorFrameDesc.Width;
-                ColorHeight = colorFrameDesc.Height;
-                ColorData = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
-                ColorTexture = new Texture2D( ColorWidth, ColorHeight, TextureFormat.RGBA32, false );
-
                 var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
                 DepthWidth = depthFrameDesc.Width;
                 DepthHeight = depthFrameDesc.Height;
-                DepthData = new ushort[depthFrameDesc.LengthInPixels];
+                DepthData_full = new ushort[depthFrameDesc.LengthInPixels];
+                DepthData = new ushort[depthFrameDesc.LengthInPixels / (defines.DOWNSAMPLE * defines.DOWNSAMPLE)];
                 DepthRaw = new byte[depthFrameDesc.LengthInPixels * 4];
-                DepthTexture = new Texture2D( DepthWidth, DepthHeight, TextureFormat.RGBA32, false );
-
-                // TODO
-                // Downsample all data frames if necessary
-                SubsampleAndFilterRGBDImage();
+                DepthTexture_full = new Texture2D( DepthWidth, DepthHeight, TextureFormat.RGBA32, false );
 
                 // Set FrameWidth and FrameHeight to the downsampled size
-                Width = DepthWidth;
-                Height = DepthHeight;
+                Width = DepthWidth / defines.DOWNSAMPLE;
+                Height = DepthHeight / defines.DOWNSAMPLE;
+
+                var colorFrameDesc = _Sensor.ColorFrameSource.CreateFrameDescription( ColorImageFormat.Rgba );
+                ColorWidth = colorFrameDesc.Width;
+                ColorHeight = colorFrameDesc.Height;
+                ColorData_full = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
+                //ColorData = new byte[Width * Height];
+                ColorTexture_full = new Texture2D( ColorWidth, ColorHeight, TextureFormat.RGBA32, false );
+                ColorTexture = new Texture2D( Width, Height, TextureFormat.RGBA32, false );
 
                 PfImage = new Texture2D( Width, Height, TextureFormat.RGBA32, false );
 
                 // Set buffers to align depth data to RGB and to align camera points
-                ColorPoints = new ColorSpacePoint[DepthWidth * DepthHeight];
-                Camera3DPoints = new CameraSpacePoint[DepthWidth * DepthHeight];
+                ColorPoints_full = new ColorSpacePoint[DepthWidth * DepthHeight];
+                ColorPoints = new ColorSpacePoint[Width * Height];
+                Camera3DPoints_full = new CameraSpacePoint[DepthWidth * DepthHeight];
+                Camera3DPoints = new CameraSpacePoint[Width * Height];
                 PfVec = new float[Width * Height];
                 Mask = new short[Width * Height];
 
@@ -137,15 +143,15 @@ namespace HoloProxies.Objects
                         {
 
                             // get color data + texture
-                            colorFrame.CopyConvertedFrameDataToArray( ColorData, ColorImageFormat.Rgba );
-                            ColorTexture.LoadRawTextureData( ColorData );
+                            colorFrame.CopyConvertedFrameDataToArray( ColorData_full, ColorImageFormat.Rgba );
+                            ColorTexture_full.LoadRawTextureData( ColorData_full );
 
                             // get depth data
-                            depthFrame.CopyFrameDataToArray( DepthData );
+                            depthFrame.CopyFrameDataToArray( DepthData_full );
 
                             // Create a depth texture
                             int index = 0;
-                            foreach (var ir in DepthData)
+                            foreach (var ir in DepthData_full)
                             {
                                 byte intensity = (byte)(ir >> 8);
                                 DepthRaw[index++] = intensity;
@@ -153,12 +159,8 @@ namespace HoloProxies.Objects
                                 DepthRaw[index++] = intensity;
                                 DepthRaw[index++] = 255; // Alpha
                             }
-                            DepthTexture.LoadRawTextureData( DepthRaw );
-                            DepthTexture.Apply();
-
-                            //Debug.Log( DepthRaw[0]);
-                            //Debug.Log( DepthRaw[350] );
-                            //Debug.Log( DepthRaw[100]);
+                            DepthTexture_full.LoadRawTextureData( DepthRaw );
+                            DepthTexture_full.Apply();
 
                             // dispose frame
                             depthFrame.Dispose();
@@ -168,10 +170,19 @@ namespace HoloProxies.Objects
                             AlignRGBD();
 
                             // Unproject to 3D points in camera space (based on bounding box)
-                            PreparePointCloud( state );
+                            UnprojectFrom2Dto3D();
 
-                            // Apply the texture //TODO this is applied in PfFromImage
-                            //ColorTexture.Apply();
+                            // TODO
+                            // Downsample all data frames if necessary
+                            DownsampleAndFilterRGBDImage();
+
+                            // Apply downsampled texture
+                            ColorTexture.LoadRawTextureData( ColorData );
+                            // Apply texture?  TODO
+
+                            // Unproject points to 3D space
+                            PreparePointCloud( state );
+                            
                             success = true;
                         }
                         colorFrame.Dispose();
@@ -210,19 +221,28 @@ namespace HoloProxies.Objects
         private void AlignRGBD()
         {
             // Stores RGB points
-            _Mapper.MapDepthFrameToColorSpace( DepthData, ColorPoints );
+            _Mapper.MapDepthFrameToColorSpace( DepthData_full, ColorPoints_full );
         }
 
         /// <summary>
+        /// TODO Need to update to use the downsampled version
+        /// Gets 3D points [units = meters] and calculated pf vector
+        /// </summary>
+        /// <param name="state">State.</param>
+        private void UnprojectFrom2Dto3D( )
+        {
+            // Stores 3D point cloud
+            _Mapper.MapDepthFrameToCameraSpace( DepthData_full, Camera3DPoints_full );
+        }
+
+        /// <summary>
+        /// TODO Need to update to use the downsampled version
         /// Gets 3D points [units = meters] and calculated pf vector
         /// </summary>
         /// <param name="state">State.</param>
         private void PreparePointCloud( HoloProxies.Engine.trackerState state )
         {
             boundingbox = findBoundingBoxFromCurrentState( state );
-
-            // Stores 3D point cloud
-            _Mapper.MapDepthFrameToCameraSpace( DepthData, Camera3DPoints );
 
             for (int i = 0; i < Height; i++)
             {
@@ -237,22 +257,24 @@ namespace HoloProxies.Objects
                         Camera3DPoints[idx].X = 0;
                         Camera3DPoints[idx].Y = 0;
                         Camera3DPoints[idx].Z = 0;
-                        PfVec[idx] = -1;
+                        PfVec[idx] = defines.OUTSIDE_BB;
                     }
                     else
                     {
                         // calculate pf
-                        PfVec[idx] = GetPf( GetPixelValue( ColorPoints[idx] ) );
+                        PfVec[idx] = GetPf( GetColorFromData(idx) );
 
                         if (drawBox)
                         {
-                            ColorSpacePoint pt = ColorPoints[idx];
-                            SetPixelValue( pt, Color.blue );
+                            ColorTexture.SetPixel( j, i, Color.blue );
                         }
                     }
                 }
             } //end for
+            ColorTexture.Apply(); 
         }
+
+
 
 
         /// <summary>
@@ -273,14 +295,64 @@ namespace HoloProxies.Objects
         /// <summary>
         /// Downsamples the image.
         /// </summary>
-        private void SubsampleAndFilterRGBDImage()
+        private void DownsampleAndFilterRGBDImage()
         {
-			// filter for zero depth pixels
-			for (int i = 0; i < (Width * Height); i++) {
-				if (DepthData [i] == 0) {
-					Mask [i] = defines.HIST_USELESS_PIXEL;
-				}
-			}
+
+            for (int y = 0; y < Height; y ++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    filterDownsampleWithHoles( x, y );
+                }
+            }
+
+        }
+
+
+        private void filterDownsampleWithHoles( int currX, int currY )
+        {
+            int inPosX = currX * defines.DOWNSAMPLE;
+            int inPosY = currY * defines.DOWNSAMPLE;
+
+            ushort depthPixelIn;
+            byte holePixelN = 0;
+            ColorSpacePoint colorPt;
+
+            for (int x = 0, j = 0 ; x < defines.DOWNSAMPLE; x+=1, j += 4) // We skip every 4 because we want to copy the RGBA bytes
+            {
+                for (int y = 0; y < defines.DOWNSAMPLE; y+=1)
+                {
+                    colorPt = ColorPoints[(currX + j) + (currY + y) * DepthWidth]; // map the detph index into color index
+                    ColorData[currX + currY * Width] += ColorData_full[(int) colorPt.X + (int) colorPt.Y * ColorWidth];
+                    ColorData[currX + currY * Width + 1] += ColorData_full[(int)colorPt.X + (int)colorPt.Y * ColorWidth + 1];
+                    ColorData[currX + currY * Width + 2] += ColorData_full[(int)colorPt.X + (int)colorPt.Y * ColorWidth + 2];
+
+                    depthPixelIn = DepthData_full[(currX + x) + (currY + y) * DepthWidth];
+                    if (depthPixelIn > 0) // If its 0 then we dont want it
+                    {
+                        DepthData[currX + currY * Width] += depthPixelIn;
+                        holePixelN++;
+                    }
+                }
+            }
+
+            ColorData[currX + currY * Width] /= (defines.DOWNSAMPLE * defines.DOWNSAMPLE);
+            ColorData[currX + currY * Width + 1] /= (defines.DOWNSAMPLE * defines.DOWNSAMPLE);
+            ColorData[currX + currY * Width + 2] /= (defines.DOWNSAMPLE * defines.DOWNSAMPLE);
+            ColorData[currX + currY * Width + 3] = 255;
+
+            if (holePixelN > 0)
+            {
+                DepthData[currX + currY * Width] /= holePixelN;
+            } else // zero depth pixels mark as useless
+            {
+                Mask[currX + currY * Width] = defines.HIST_USELESS_PIXEL;
+            }
+        }
+
+        public Color GetColorFromData( int idx )
+        {
+            return new Color( ColorData[idx * 4], ColorData[idx * 4 + 1], ColorData[idx * 4 + 2], ColorData[idx * 4 + 3] );
         }
 
         /// <summary>
@@ -325,7 +397,6 @@ namespace HoloProxies.Objects
                 for (int j = 0; j < Width; j++)
                 {
                     int idx = i * Width + j;
-                    ColorSpacePoint pt = ColorPoints[idx];
                     // if it's not a zero depth pixel i.e. useless
                     if (Mask[i] != defines.HIST_USELESS_PIXEL)
                     {
@@ -333,13 +404,13 @@ namespace HoloProxies.Objects
                         if (j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w)
                         {
                             Mask[idx] = defines.HIST_FG_PIXEL;
-                            SetPixelValue( pt, Color.black ); //TODO
+                            ColorTexture.SetPixel( j, i, Color.black ); //TODO
                         }
                         // else if it is in the near background
                         else if (j > boundingboxBG.x && j < boundingboxBG.z && i > boundingboxBG.y && i < boundingboxBG.w)
                         {
                             Mask[idx] = defines.HIST_BG_PIXEL;
-                            SetPixelValue( pt, Color.green ); //TODO
+                            ColorTexture.SetPixel( j, i, Color.green ); //TODO
                         }
                     }
                 }
@@ -417,7 +488,7 @@ namespace HoloProxies.Objects
                     }
                 }
             }
-            ColorTexture.Apply();
+            //ColorTexture.Apply();
         }
 
         void OnApplicationQuit()

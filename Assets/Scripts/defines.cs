@@ -32,7 +32,9 @@ namespace HoloProxies.Utils
 
 
 		public const int BB_MARGIN = 5;
+        public const int OUTSIDE_BB = -1;
 
+        public const int DOWNSAMPLE = 4;
 
     }
 }
