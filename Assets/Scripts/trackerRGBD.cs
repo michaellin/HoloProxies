@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.IO;
 using UnityEngine;
 
 using Windows.Kinect;
@@ -145,7 +146,7 @@ namespace HoloProxies.Engine
 
             evaluateEnergy( out lastenergy, trackingState );
             if (lastenergy < 0.1f) { trackingState.energy = 0; return; }
-
+            Debug.Log( "did get here" );
             /*** Levenberg-Marquardt ***/
 
             const int MAX_STEPS = 100;
@@ -201,10 +202,11 @@ namespace HoloProxies.Engine
                     if (converged) { break; }
                 }
             }
-
+            Debug.Log( "last energy " + lastenergy );
             // after convergence, the pf of the pointcloud is recycled for histogram update
             if (lastenergy >= 0.5f && updateappearance)
             {
+                Debug.Log( "converged" );
 				labelMaskForegroundPixels( trackingState );
 				// TODO change this to use Mask instead - DONE
 				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorPoints, frame.ColorTexture, frame.Mask);
@@ -215,6 +217,60 @@ namespace HoloProxies.Engine
 
         }
         #endregion
+
+        public bool TestEvaluateEnergy ( string ptcloudFile )
+        {
+            //int npoints = width * height;
+            CameraSpacePoint[] pointCloud = new CameraSpacePoint[13568];
+            float[] pfvec = new float[13568];
+            // Read the file and parse data into point cloud
+            using (BinaryReader file = new BinaryReader( File.Open( ptcloudFile, FileMode.Open ) ))
+            {
+                for (int k = 0; k < 13568; k ++)
+                {
+                    pointCloud[k] = new CameraSpacePoint();
+                    pointCloud[k].X = file.ReadSingle();
+                    pointCloud[k].Y = file.ReadSingle();
+                    pointCloud[k].Z = file.ReadSingle();
+                    pfvec[k] = file.ReadSingle();
+                }
+            }
+            
+
+            int count = 13568;
+
+            CameraSpacePoint[] ptcloud_ptr = pointCloud;
+            float[] pfArray = pfvec;
+
+            Matrix4x4 pose = new Matrix4x4();
+            pose.m00 = 0.760526f; pose.m10 = 0.523887f; pose.m20 = 0.38359f; pose.m30 = 0.0f;
+            pose.m01 = 0.631573f; pose.m11 = -0.459739f; pose.m21 = -0.624303f; pose.m31 = 0.0f;
+            pose.m02 = -0.150713f; pose.m12 = 0.717064f; pose.m22 = -0.680517f; pose.m32 = 0.0f;
+            pose.m03 = 0.007287f; pose.m13 = -0.011503f; pose.m23 = 0.583796f; pose.m33 = 1.0f;
+            trackerState state = new trackerState( 1 );
+            state.getPose( 0 ).setFromH( pose );
+            objectPose[] poses = state.getPoseList();
+            int objCount = state.numPoses();
+
+            float e = 0, es = 0;
+            int totalpix = 0;
+            int totalpfpix = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                es = computePerPixelEnergy( ptcloud_ptr[i], pfArray[i], poses, objCount );
+                if (es > 0)
+                {
+                    e += es; totalpix++;
+                    if (pfArray[i] > 0.5) totalpfpix++;
+                }
+            }
+
+            float energy = totalpfpix > 100 ? e / totalpix : 0.0f;
+
+            Debug.Log( "energy is " + energy.ToString("F6") );
+            return true;
+        }
 
 
         #region main functions
@@ -270,7 +326,7 @@ namespace HoloProxies.Engine
 
                 for (int i = 0; i < numObj; i++)
                 {
-                    Vector3 objpt = poses[i].getInvH() * (new Vector3( inpt.X, inpt.Y, inpt.Z ));
+                    Vector3 objpt = poses[i].getInvH().MultiplyPoint3x4(new Vector3( inpt.X, inpt.Y, inpt.Z ));
                     idx = pt2IntIdx( objpt );
                     if (idx >= 0)
                     {

@@ -50,6 +50,8 @@ namespace HoloProxies.Objects
         private MultiSourceFrameReader _Reader;
         private CoordinateMapper _Mapper;
 
+        private bool drawBox = true;
+
         // Constructor
         public FrameManager()
         {
@@ -96,7 +98,10 @@ namespace HoloProxies.Objects
                 K = new Matrix4x4();
                 K.m00 = intrinsics.FocalLengthX; K.m01 = 0; K.m02 = intrinsics.PrincipalPointX;
                 K.m10 = 0; K.m11 = intrinsics.FocalLengthY; K.m12 = intrinsics.PrincipalPointY;
-                K.m20 = 0; K.m21 = 0; K.m23 = 1;
+                K.m20 = 0; K.m21 = 0; K.m22 = 1.0f;
+
+                // TODO print K
+                Debug.Log( "K = " + K );
 
                 // Initialize color histogram
                 histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
@@ -134,7 +139,6 @@ namespace HoloProxies.Objects
                             // get color data + texture
                             colorFrame.CopyConvertedFrameDataToArray( ColorData, ColorImageFormat.Rgba );
                             ColorTexture.LoadRawTextureData( ColorData );
-                            ColorTexture.Apply();
 
                             // get depth data
                             depthFrame.CopyFrameDataToArray( DepthData );
@@ -166,7 +170,9 @@ namespace HoloProxies.Objects
                             // Unproject to 3D points in camera space (based on bounding box)
                             PreparePointCloud( state );
 
-							success = true;
+                            // Apply the texture //TODO this is applied in PfFromImage
+                            //ColorTexture.Apply();
+                            success = true;
                         }
                         colorFrame.Dispose();
                         colorFrame = null;
@@ -186,6 +192,16 @@ namespace HoloProxies.Objects
         public Color GetPixelValue( ColorSpacePoint pt )
         {
             return ColorTexture.GetPixel( (int)pt.X, (int)pt.Y );
+        }
+
+        /// <summary>
+        /// Given a color space point with x,y coordinates of a pixel location
+        /// set the corresponding pixel to the given color
+        /// </summary>
+        /// <param name="pt">Point.</param>
+        public void SetPixelValue( ColorSpacePoint pt, Color color )
+        {
+            ColorTexture.SetPixel( (int)pt.X, (int)pt.Y, color );
         }
 
         /// <summary>
@@ -212,7 +228,6 @@ namespace HoloProxies.Objects
             {
                 for (int j = 0; j < Width; j++)
                 {
-
                     int idx = i * Width + j;
 
                     // if point is not in the bounding box
@@ -228,6 +243,12 @@ namespace HoloProxies.Objects
                     {
                         // calculate pf
                         PfVec[idx] = GetPf( GetPixelValue( ColorPoints[idx] ) );
+
+                        if (drawBox)
+                        {
+                            ColorSpacePoint pt = ColorPoints[idx];
+                            SetPixelValue( pt, Color.blue );
+                        }
                     }
                 }
             } //end for
@@ -304,7 +325,7 @@ namespace HoloProxies.Objects
                 for (int j = 0; j < Width; j++)
                 {
                     int idx = i * Width + j;
-
+                    ColorSpacePoint pt = ColorPoints[idx];
                     // if it's not a zero depth pixel i.e. useless
                     if (Mask[i] != defines.HIST_USELESS_PIXEL)
                     {
@@ -312,15 +333,18 @@ namespace HoloProxies.Objects
                         if (j > boundingbox.x && j < boundingbox.z && i > boundingbox.y && i < boundingbox.w)
                         {
                             Mask[idx] = defines.HIST_FG_PIXEL;
+                            SetPixelValue( pt, Color.black ); //TODO
                         }
                         // else if it is in the near background
                         else if (j > boundingboxBG.x && j < boundingboxBG.z && i > boundingboxBG.y && i < boundingboxBG.w)
                         {
                             Mask[idx] = defines.HIST_BG_PIXEL;
+                            SetPixelValue( pt, Color.green ); //TODO
                         }
                     }
                 }
             } //end for
+            ColorTexture.Apply();
         }
 
         /// <summary>
@@ -350,7 +374,8 @@ namespace HoloProxies.Objects
                 for (int j = 0; j < 8; j++, idx++)
                 {
                     Matrix4x4 H = state.getPose( i ).getH();
-                    ipts[idx] = K * (H * corners[j]);
+                    Vector3 temp = H.MultiplyPoint( corners[j] );
+                    ipts[idx] = K * ( H.MultiplyPoint( corners[j] ) );
                     ipts[idx].x /= ipts[idx].z; ipts[idx].y /= ipts[idx].z;
 
                     bb.x = ipts[idx].x < bb.x ? ipts[idx].x : bb.x;
@@ -374,23 +399,25 @@ namespace HoloProxies.Objects
         public void ComputePfImageFromHistogram()
         {
             float pf = 0;
-            for (int i = 0; i < Height; i++)
+            for (int j = 0; j < Height; j++)
             {
-                for (int j = 0; j < Width; j++)
+                for (int i = 0; i < Width; i++)
                 {
-                    int idx = i * Width + Height;
-                    Color pixel = ColorTexture.GetPixel( (int)ColorPoints[idx].X, (int)ColorPoints[idx].Y );
+                    int idx = j * Width + i;
+                    ColorSpacePoint pt = ColorPoints[idx];
+                    Color pixel = ColorTexture.GetPixel( (int)pt.X, (int)pt.Y );
                     pf = GetPf( pixel );
                     if (pf > 0.5f)
                     {
-                        PfImage.SetPixel( j, i, Color.red );
+                        SetPixelValue( pt, Color.red );
                     }
                     else if (pf == 0.5f)
                     {
-                        PfImage.SetPixel( j, i, Color.blue );
+                        SetPixelValue( pt, Color.green );
                     }
                 }
             }
+            ColorTexture.Apply();
         }
 
         void OnApplicationQuit()

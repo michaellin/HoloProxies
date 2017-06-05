@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Windows.Kinect;
+using System.IO;
 using UnityEngine;
 
 using HoloProxies.Engine;
@@ -17,11 +19,13 @@ public class trackingManager : MonoBehaviour
     private const int numTrackingObj = 1;       // number of objects being tracked
     private FrameManager frame;           // frame manager accesses the kinect data and does all the alignment
     private trackerRGBD tracker;          // tracker that implements the pose estimation algorithm
-    private bool needStarTracker = true;  // turn on or off tracking
+    private bool needStarTracker = false;  // turn on or off tracking
 
     private string[] sdfFiles = { "Data/bin/teacan.bin" };
 
     private System.Diagnostics.Stopwatch timer;
+
+    private float[] initPose = { 0.0f, 0.0f, 0.6f, Mathf.PI / 2, 0, 0 };  // initial pose estimate
 
     // states for the tracking Manager state machine
     private enum ManagerState : byte
@@ -43,9 +47,11 @@ public class trackingManager : MonoBehaviour
         // Initialize all the important components here
         frame = new FrameManager();                            // does the frame grabs and frame processing from Kinect
         tracker = new trackerRGBD( numTrackingObj, sdfFiles ); // tracker performs the main tracking algorithm and keeps track of shapes
+        
+        tracker.trackingState.setHFromParam( initPose, 0 );       // setting the state of object 1 only
 
-        float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI, 0, 0 };
-        tracker.trackingState.setHFromParam( poses, 0 );       // setting the state of object 1 only
+        //tracker.TestEvaluateEnergy( "Test/testenergy1.bin" );
+
 
         // Initialize a timer to keep track fo fps
         timer = new System.Diagnostics.Stopwatch();
@@ -60,8 +66,7 @@ public class trackingManager : MonoBehaviour
         switch (currentState)
         {
             case ManagerState.REINIT_HIST:
-                float[] poses = { 0.0f, 0.0f, 0.8f, -Mathf.PI / 2, 0, 0 };
-                tracker.trackingState.setHFromParam( poses, 0 );
+                tracker.trackingState.setHFromParam( initPose, 0 );
                 frame.ReinitHistogramFromRendering( tracker.trackingState );
                 needStarTracker = true;
                 currentState = ManagerState.PROCESS_VIDEO;
@@ -97,18 +102,17 @@ public class trackingManager : MonoBehaviour
         }
         else if (Input.GetKeyDown( KeyCode.N ))
         {
-            Debug.Log( "Processing one frame" );
+            //Debug.Log( "Processing one frame" );
             currentState = ManagerState.PROCESS_FRAME;
         }
         else if (Input.GetKeyDown( KeyCode.B ))
         {
             Debug.Log( "Processing video" );
             currentState = ManagerState.PROCESS_VIDEO;
-
         }
-        else if (Input.GetKeyDown( KeyCode.E ))
+        else if (Input.GetKeyDown( KeyCode.P ))
         {
-            Debug.Log( "Exiting..." );
+            Debug.Log( "Paused.." );
         }
     }
 
@@ -119,28 +123,55 @@ public class trackingManager : MonoBehaviour
     /// </summary>
     private void ProcessFrame()
     {
-
         timer.Start(); // Start a timer to measure fps
         bool success = frame.UpdateFrame( tracker.trackingState );  //process frame
         timer.Stop();
-        Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
 
+        if (processedFrameNo % 10 == 0)
+        {
+            Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
+        }
+        timer.Reset();
+        if (!success)
+        {
+            //Debug.Log( "Update frame failed" ); // TODO Michael printing
+        }
 		if (needStarTracker && success)
         {
             tracker.TrackObjects( frame, true ); // TODO may want to use false for update appearance instead
-            Debug.Log( tracker.trackingState.energy );
+            //Debug.Log( tracker.trackingState.getPose(0).getH() );
         }
+
+        frame.ComputePfImageFromHistogram();
     }
     #endregion
 
-    public Texture2D getColorFrame()
+    public int getFrameWidth()
+    {
+        return frame.Width;
+    }
+    public int getFrameHeight()
+    {
+        return frame.Height;
+    }
+    public Texture2D getColorTexture()
     {
         return frame.ColorTexture;
     }
 
-    public Texture2D getDepthFrame()
+    public Texture2D getDepthTexture()
     {
         return frame.DepthTexture;
+    }
+
+    public ColorSpacePoint[] getColorPoints()
+    {
+        return frame.ColorPoints;
+    }
+
+    public UnityEngine.Vector4 GetBoundingBox()
+    {
+        return frame.boundingbox;
     }
 
 } // end trackingManager class

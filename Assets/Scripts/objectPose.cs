@@ -125,15 +125,16 @@ namespace HoloProxies.Objects
             float tsum = 1 - tsq;
 
             outR.m00 = (4 * t1 * t1 - 4 * t2 * t2 - 4 * t3 * t3 + tsum * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m01 = (8 * t1 * t2 + 4 * t3 * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m02 = (8 * t1 * t3 - 4 * t2 * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m10 = (8 * t1 * t2 - 4 * t3 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m10 = (8 * t1 * t2 + 4 * t3 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m20 = (8 * t1 * t3 - 4 * t2 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m01 = (8 * t1 * t2 - 4 * t3 * tsum) / ((1 + tsq) * (1 + tsq));
             outR.m11 = (4 * t2 * t2 - 4 * t1 * t1 - 4 * t3 * t3 + tsum * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m12 = (8 * t2 * t3 + 4 * t1 * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m20 = (8 * t1 * t3 + 4 * t2 * tsum) / ((1 + tsq) * (1 + tsq));
-            outR.m21 = (8 * t2 * t3 - 4 * t1 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m21 = (8 * t2 * t3 + 4 * t1 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m02 = (8 * t1 * t3 + 4 * t2 * tsum) / ((1 + tsq) * (1 + tsq));
+            outR.m12 = (8 * t2 * t3 - 4 * t1 * tsum) / ((1 + tsq) * (1 + tsq));
             outR.m22 = (4 * t3 * t3 - 4 * t2 * t2 - 4 * t1 * t1 + tsum * tsum) / ((1 + tsq) * (1 + tsq));
 
+            // transpose because we use row major
             return outR;
         }
 
@@ -148,23 +149,23 @@ namespace HoloProxies.Objects
             Matrix4x4 M = new Matrix4x4();
 
             M.m00 = outR.m00;
-            M.m01 = outR.m01;
-            M.m02 = outR.m02;
-            M.m03 = 0;
-
             M.m10 = outR.m10;
-            M.m11 = outR.m11;
-            M.m12 = outR.m12;
-            M.m13 = 0;
-
             M.m20 = outR.m20;
-            M.m21 = outR.m21;
-            M.m22 = outR.m22;
-            M.m23 = 0;
+            M.m30 = 0;
 
-            M.m30 = t.x;
-            M.m31 = t.y;
-            M.m32 = t.z;
+            M.m01 = outR.m01;
+            M.m11 = outR.m11;
+            M.m21 = outR.m21;
+            M.m31 = 0;
+
+            M.m02 = outR.m02;
+            M.m12 = outR.m12;
+            M.m22 = outR.m22;
+            M.m32 = 0;
+
+            M.m03 = t.x;
+            M.m13 = t.y;
+            M.m23 = t.z;
             M.m33 = 1;
 
             return M;
