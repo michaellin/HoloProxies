@@ -161,12 +161,7 @@ public class trackingManager : MonoBehaviour
 
     public Texture2D getDepthTexture()
     {
-        return frame.DepthTexture;
-    }
-
-    public ColorSpacePoint[] getColorPoints()
-    {
-        return frame.ColorPoints;
+        return frame.DepthTexture_full;
     }
 
     public UnityEngine.Vector4 GetBoundingBox()

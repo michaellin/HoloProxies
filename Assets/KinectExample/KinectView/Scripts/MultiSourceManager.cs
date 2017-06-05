@@ -30,15 +30,15 @@ public class MultiSourceManager : MonoBehaviour {
         {
             _Reader = _Sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth);
             
+            var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
+            _DepthData = new ushort[depthFrameDesc.LengthInPixels];
+
             var colorFrameDesc = _Sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Rgba);
             ColorWidth = colorFrameDesc.Width;
             ColorHeight = colorFrameDesc.Height;
             
             _ColorTexture = new Texture2D(colorFrameDesc.Width, colorFrameDesc.Height, TextureFormat.RGBA32, false);
             _ColorData = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
-            
-            var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
-            _DepthData = new ushort[depthFrameDesc.LengthInPixels];
             
             if (!_Sensor.IsOpen)
             {
