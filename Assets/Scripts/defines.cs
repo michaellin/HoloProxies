@@ -31,10 +31,10 @@ namespace HoloProxies.Utils
         public const int BLACK = 0;
 
 
-		public const int BB_MARGIN = 5;
+		public const int BB_MARGIN = 2;
         public const int OUTSIDE_BB = -1;
 
-        public const int DOWNSAMPLE = 4;
+        public const int DOWNSAMPLE = 1; // remeber to scale K
 
     }
 }

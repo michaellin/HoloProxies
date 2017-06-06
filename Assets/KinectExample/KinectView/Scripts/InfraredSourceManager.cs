@@ -59,10 +59,6 @@ public class InfraredSourceManager : MonoBehaviour
                 _Texture.LoadRawTextureData(_RawData);
                 _Texture.Apply();
 
-                Debug.Log( _RawData[0] );
-                Debug.Log( _RawData[350] );
-                Debug.Log( _RawData[100] );
-
                 frame.Dispose();
                 frame = null;
             } 

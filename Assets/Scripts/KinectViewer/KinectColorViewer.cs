@@ -19,6 +19,6 @@ public class KinectColorViewer : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-        gameObject.GetComponent<Renderer>().material.mainTexture = _TrackerManager.getColorTexture(); ;
+        gameObject.GetComponent<Renderer>().material.mainTexture = _TrackerManager.getColorTextureVisual(); ;
 	}
 }

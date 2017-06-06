@@ -145,12 +145,13 @@ namespace HoloProxies.Engine
             float lambda = 10000.0f;
 
             evaluateEnergy( out lastenergy, trackingState );
+            Debug.Log( "last energy " + lastenergy.ToString("F6") );
             if (lastenergy < 0.1f) { trackingState.energy = 0; return; }
-            Debug.Log( "did get here" );
+            //Debug.Log( "did get here" );
             /*** Levenberg-Marquardt ***/
 
             computeJacobianAndHessian( ATb, ATA, tempState ); // TODO Michael put here to test
-            return;
+            //return; // TODO
 
             const int MAX_STEPS = 100;
             const float MIN_STEP = 0.00005f;
@@ -205,11 +206,11 @@ namespace HoloProxies.Engine
                     if (converged) { break; }
                 }
             }
-            Debug.Log( "last energy " + lastenergy );
+            //Debug.Log( "last energy " + lastenergy );
             // after convergence, the pf of the pointcloud is recycled for histogram update
             if (lastenergy >= 0.5f && updateappearance)
             {
-                Debug.Log( "converged" );
+                //Debug.Log( "converged" );
 				labelMaskForegroundPixels( trackingState );
 				// TODO change this to use Mask instead - DONE
 				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorTexture, frame.Mask);
@@ -284,11 +285,13 @@ namespace HoloProxies.Engine
         /// <param name="state"></param>
         private void evaluateEnergy( out float energy, trackerState state )
         {
-            int count = frame.Camera3DPoints.Length;
+            int count = frame.Width * frame.Height; //frame.Camera3DPoints.Length; TODO Michael changed this
 
             CameraSpacePoint[] ptcloud_ptr = frame.Camera3DPoints;
-            float[] pfArray = frame.PfVec;
+            //float[] pfArray = frame.PfVec;
 
+            //Debug.Log( pfArray[0] + " " + pfArray[200] + "  " + pfArray[340] + "  " + pfArray[500] );
+            
             objectPose[] poses = state.getPoseList();
             int objCount = state.numPoses();
 
@@ -296,16 +299,32 @@ namespace HoloProxies.Engine
             int totalpix = 0;
             int totalpfpix = 0;
 
+            //int testcount = 0;
+            //int testcount2 = 0;
+
             for (int i = 0; i < count; i++)
             {
-                es = computePerPixelEnergy( ptcloud_ptr[i], pfArray[i], poses, objCount );
+                //if (frame.PfVec[i] >= 0) { Debug.Log( "hiii" ); } // TODO
+                es = computePerPixelEnergy( ptcloud_ptr[i], frame.PfVec[i], poses, objCount );
                 if (es > 0)
                 {
                     e += es; totalpix++;
-                    if (pfArray[i] > 0.5) totalpfpix++;
+                    if (frame.PfVec[i] > 0.5) { totalpfpix++; }
+                    //if (pfArray[i] < 0.5f) { testcount++; }
+                    //if (pfArray[i] != -1)
+                    //{
+                    //    testcount++;
+                    //    Debug.Log( pfArray[i] );
+                    //} else
+                    //{
+                    //    testcount2++;
+                    //}
+
                 }
             }
 
+
+            //Debug.Log( "testcount " + testcount + "testcount2 " + testcount2 );
             energy = totalpfpix > 100 ? e / totalpix : 0.0f;
         }
 
@@ -319,7 +338,7 @@ namespace HoloProxies.Engine
         /// <returns> float enegy value of the input pixel </returns>
         private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] poses, int numObj )
         {
-
+            //Debug.Log( "pf " + pf ); // TODO
             if (pf > 0)
             {
                 float dt = defines.MAX_SDF;
@@ -327,25 +346,43 @@ namespace HoloProxies.Engine
                 int idx;
                 float[] voxelBlocks;
 
+                //int testcount = 0;
+                //int testcount2 = 0;
+
                 for (int i = 0; i < numObj; i++)
                 {
-                    Vector3 objpt = poses[i].getInvH().MultiplyPoint3x4(new Vector3( inpt.X, inpt.Y, inpt.Z ));
+                    
+                    Vector3 objpt = poses[i].getInvH().MultiplyPoint(new Vector3( inpt.X, inpt.Y, inpt.Z ));
+                    
                     idx = pt2IntIdx( objpt );
                     if (idx >= 0)
                     {
                         voxelBlocks = shapes[i].getSDFVoxels();
                         partdt = voxelBlocks[idx];
                         dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
+
+                        //if (pf != -1)
+                        //{
+                        //    testcount++;
+                        //    Debug.Log( pf );
+                        //}
+                        //else
+                        //{
+                        //    testcount2++;
+                        //}
+
                     }
                 }
 
-                if (dt == defines.MAX_SDF) { return -1.0f; };
+                //Debug.Log( "testcount " + testcount + "testcount2 " + testcount2 );
 
+                if (dt == defines.MAX_SDF) { return -1.0f; };
                 double exp_dt = Math.Exp( -dt * defines.DTUNE );
                 double deto = exp_dt + 1.0f;
                 double sheaviside = 1.0f / deto;
                 double sdelta = 4.0f * exp_dt * sheaviside * sheaviside;
                 float e = (float)(pf * sdelta * defines.TMP_WEIGHT + (1 - pf) * sheaviside * (2 - defines.TMP_WEIGHT));
+
                 return e;
             }
             else { return 0.0f; }
@@ -382,8 +419,8 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                if (pfArray[i] != defines.OUTSIDE_BB)
-                {
+                //if (pfArray[i] != defines.OUTSIDE_BB)
+                //{
                     if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], poses, objCount ))
                     {
                         for (int a = 0, counter = 0; a < paramNum; a++)
@@ -392,9 +429,8 @@ namespace HoloProxies.Engine
                             for (int b = 0; b <= a; b++, counter++) { globalHessian[counter] += jacobian[a] * jacobian[b]; }
                         }
                     }
-                }
+                //}
             }
-            return;
 
             Array.Copy( globalGradient, gradient, paramNum );
             for (int r = 0, counter = 0; r < paramNum; r ++) {

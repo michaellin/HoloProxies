@@ -57,30 +57,27 @@ namespace HoloProxies.Objects
 
 			float sumForeground = 0;
 			float sumBackground = 0;
-
-
+            
 			for (int i = 0; i < FrameHeight; i++) {
 				for (int j = 0; j < FrameWidth; j++) {
 					int idx = j + i * FrameWidth;
 					Color pixel = colorTex.GetPixel ( j, i );
-					ru = (int) (pixel.r / BinsNumber);
-					gu = (int) (pixel.g / BinsNumber);
-					bu = (int) (pixel.b / BinsNumber);
-					pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
+                    ru = (int)((pixel.r * 255.0f) / ((float)BinsNumber));
+                    gu = (int)((pixel.g * 255.0f) / ((float)BinsNumber));
+                    bu = (int)((pixel.b * 255.0f) / ((float)BinsNumber));
+                    pidx = ru * BinsNumber * BinsNumber + gu * BinsNumber + bu;
+                    //Debug.Log( "p: " + pidx );
                     
                     short m = Mask[idx];
 					if (m == defines.HIST_FG_PIXEL) { // foreground pixel 
-                        //colorTex.SetPixel( (int)pt.X, (int)pt.Y, Color.black ); //TODO
                         data_unnormalized [pidx].x++;
 						sumForeground++;
 					} else if (m == defines.HIST_BG_PIXEL) { // background 
-                        //colorTex.SetPixel( (int)pt.X, (int)pt.Y, Color.green );  //TODO
                         data_unnormalized [pidx].y++;
 						sumBackground++;
 					} else if (m == defines.HIST_USELESS_PIXEL) { // useless pixels
 					} else { // any other color is far background
 					}
-						
 				}
 			}
 
@@ -91,10 +88,8 @@ namespace HoloProxies.Objects
 				data_normalized[i].x = data_unnormalized[i].x + sumForeground + 0.0001f;
 				data_normalized[i].y = data_unnormalized[i].y + sumBackground + 0.0001f;
 				posterior[i] = data_normalized[i].x / (data_normalized[i].x + data_normalized[i].y);
+                //Debug.Log( posterior[i] );
 			}
-
-            // TODO
-            //colorTex.Apply();
 
 		}
 

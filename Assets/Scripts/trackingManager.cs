@@ -127,7 +127,7 @@ public class trackingManager : MonoBehaviour
         bool success = frame.UpdateFrame( tracker.trackingState );  //process frame
         timer.Stop();
 
-        if (processedFrameNo % 10 == 0)
+        if (processedFrameNo % 10 == 0 && timer.ElapsedMilliseconds != 0)
         {
             Debug.Log( string.Format( "ProcessFrame: {0}", timer.ElapsedMilliseconds ) );
         }
@@ -139,7 +139,6 @@ public class trackingManager : MonoBehaviour
 		if (needStarTracker && success)
         {
             tracker.TrackObjects( frame, true ); // TODO may want to use false for update appearance instead
-            //Debug.Log( tracker.trackingState.getPose(0).getH() );
         }
 
         frame.ComputePfImageFromHistogram();
@@ -154,9 +153,9 @@ public class trackingManager : MonoBehaviour
     {
         return frame.Height;
     }
-    public Texture2D getColorTexture()
+    public Texture2D getColorTextureVisual()
     {
-        return frame.ColorTexture;
+        return frame.ColorTextureVisual;
     }
 
     public Texture2D getDepthTexture()
