@@ -41,6 +41,7 @@ namespace HoloProxies.Engine
         // number of objects
         int nObjects;
 
+        /*** Variables used by TrackObject preallocated to improve speed ***/
         // size of the gradient
         int ATb_size; // (6*nObjects)
 
@@ -53,6 +54,12 @@ namespace HoloProxies.Engine
         // gradient
         float[] ATb;
 
+        /*** Variables used by computePerPixelJacobian preallocate for speed ***/
+        float[] voxelBlocks = new float[defines.DT_VOL_3DSIZE];
+
+        float[] minVoxelBlocks = new float[defines.DT_VOL_3DSIZE];
+
+        
         #region ISRRGBtracker.cpp
         public trackerRGBD( int nObjs, string[] fileNames )
         {
@@ -147,22 +154,22 @@ namespace HoloProxies.Engine
             evaluateEnergy( out lastenergy, trackingState );
             Debug.Log( "last energy " + lastenergy.ToString("F6") );
             if (lastenergy < 0.1f) { trackingState.energy = 0; return; }
-            //Debug.Log( "did get here" );
+
             /*** Levenberg-Marquardt ***/
 
-            computeJacobianAndHessian( ATb, ATA, tempState ); // TODO Michael put here to test
-            //return; // TODO
-
-            const int MAX_STEPS = 100;
+            const int MAX_STEPS = 1;// 100;// TODO
             const float MIN_STEP = 0.00005f;
             const float MIN_DECREASE = 0.0001f;
             const float TR_REGION_INCREASE = 0.10f;
             const float TR_REGION_DECREASE = 10.0f;
 
+
+
             { // create a local scope to control these variables
                 for (int iter = 0; iter < MAX_STEPS; iter++)
                 {
                     computeJacobianAndHessian( ATb, ATA, tempState );
+
                     while (true)
                     {
                         computeSingleStep( cache, ATA, ATb, lambda, ATb_size );
@@ -171,7 +178,7 @@ namespace HoloProxies.Engine
                         float MAXnorm = 0.0f;
                         for (int i = 0; i < ATb_size; i++)
                         {
-                            float tmp = Math.Abs( cache[i] );
+                            float tmp = cache[i] > 0? cache[i] : -cache[i]; // absolute value
                             if (tmp > MAXnorm)
                             {
                                 MAXnorm = tmp;
@@ -206,17 +213,15 @@ namespace HoloProxies.Engine
                     if (converged) { break; }
                 }
             }
-            //Debug.Log( "last energy " + lastenergy );
+
             // after convergence, the pf of the pointcloud is recycled for histogram update
             if (lastenergy >= 0.5f && updateappearance)
             {
-                //Debug.Log( "converged" );
-				labelMaskForegroundPixels( trackingState );
-				// TODO change this to use Mask instead - DONE
-				frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorTexture, frame.Mask);
+                labelMaskForegroundPixels( trackingState );
+ 
+                frame.histogram.UpdateHistogramFromLabeledMask( 0.3f, 0.1f, frame.ColorTexture, frame.Mask );
             }
 
-            //state.setFrom( trackingState );
             trackingState.energy = lastenergy;
 
         }
@@ -288,10 +293,7 @@ namespace HoloProxies.Engine
             int count = frame.Width * frame.Height; //frame.Camera3DPoints.Length; TODO Michael changed this
 
             CameraSpacePoint[] ptcloud_ptr = frame.Camera3DPoints;
-            //float[] pfArray = frame.PfVec;
 
-            //Debug.Log( pfArray[0] + " " + pfArray[200] + "  " + pfArray[340] + "  " + pfArray[500] );
-            
             objectPose[] poses = state.getPoseList();
             int objCount = state.numPoses();
 
@@ -304,27 +306,13 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                //if (frame.PfVec[i] >= 0) { Debug.Log( "hiii" ); } // TODO
                 es = computePerPixelEnergy( ptcloud_ptr[i], frame.PfVec[i], poses, objCount );
                 if (es > 0)
                 {
                     e += es; totalpix++;
                     if (frame.PfVec[i] > 0.5) { totalpfpix++; }
-                    //if (pfArray[i] < 0.5f) { testcount++; }
-                    //if (pfArray[i] != -1)
-                    //{
-                    //    testcount++;
-                    //    Debug.Log( pfArray[i] );
-                    //} else
-                    //{
-                    //    testcount2++;
-                    //}
-
                 }
             }
-
-
-            //Debug.Log( "testcount " + testcount + "testcount2 " + testcount2 );
             energy = totalpfpix > 100 ? e / totalpix : 0.0f;
         }
 
@@ -338,7 +326,6 @@ namespace HoloProxies.Engine
         /// <returns> float enegy value of the input pixel </returns>
         private float computePerPixelEnergy( CameraSpacePoint inpt, float pf, objectPose[] poses, int numObj )
         {
-            //Debug.Log( "pf " + pf ); // TODO
             if (pf > 0)
             {
                 float dt = defines.MAX_SDF;
@@ -360,21 +347,8 @@ namespace HoloProxies.Engine
                         voxelBlocks = shapes[i].getSDFVoxels();
                         partdt = voxelBlocks[idx];
                         dt = partdt < dt ? partdt : dt; // now use a hard min to approximate
-
-                        //if (pf != -1)
-                        //{
-                        //    testcount++;
-                        //    Debug.Log( pf );
-                        //}
-                        //else
-                        //{
-                        //    testcount2++;
-                        //}
-
                     }
                 }
-
-                //Debug.Log( "testcount " + testcount + "testcount2 " + testcount2 );
 
                 if (dt == defines.MAX_SDF) { return -1.0f; };
                 double exp_dt = Math.Exp( -dt * defines.DTUNE );
@@ -401,7 +375,7 @@ namespace HoloProxies.Engine
         private void computeJacobianAndHessian( float[] gradient, float[] hessian, trackerState tracker )
         {
 
-            int count = frame.Camera3DPoints.Length;
+            int count = frame.Camera3DPoints.Length; //frame.Width * frame.Height; //
             CameraSpacePoint[] ptcloud = frame.Camera3DPoints; // 3D voxels in meters
             float[] pfArray = frame.PfVec; // pf of each voxel
             objectPose[] poses = tracker.getPoseList();
@@ -419,8 +393,8 @@ namespace HoloProxies.Engine
 
             for (int i = 0; i < count; i++)
             {
-                //if (pfArray[i] != defines.OUTSIDE_BB)
-                //{
+                if (pfArray[i] != defines.OUTSIDE_BB)
+                {
                     if (computePerPixelJacobian( out jacobian, ptcloud[i], pfArray[i], poses, objCount ))
                     {
                         for (int a = 0, counter = 0; a < paramNum; a++)
@@ -429,8 +403,9 @@ namespace HoloProxies.Engine
                             for (int b = 0; b <= a; b++, counter++) { globalHessian[counter] += jacobian[a] * jacobian[b]; }
                         }
                     }
-                //}
+                }
             }
+
 
             Array.Copy( globalGradient, gradient, paramNum );
             for (int r = 0, counter = 0; r < paramNum; r ++) {
@@ -466,8 +441,8 @@ namespace HoloProxies.Engine
             if (pfVal < 0) { return false; }
             float dt = defines.MAX_SDF; float partdt = defines.MAX_SDF;
             int idx; int minidx = 0;
-            float[] voxelBlocks = new float[defines.DT_VOL_3DSIZE];
-            float[] minVoxelBlocks = new float[defines.DT_VOL_3DSIZE];
+            //float[] voxelBlocks = new float[defines.DT_VOL_3DSIZE];
+            //float[] minVoxelBlocks = new float[defines.DT_VOL_3DSIZE];
             Vector3 pt = new Vector3( ptcloud.X, ptcloud.Y, ptcloud.Z );
             Vector3 minpt = new Vector3();
             Vector3 ddt;
@@ -507,7 +482,7 @@ namespace HoloProxies.Engine
             double d_heaviside_dt = dbase * defines.DTUNE;
             double d_delta_dt = 8.0f * defines.DTUNE * Math.Exp( -2.0f * defines.DTUNE * dt ) / (deto * deto * deto) - 4.0f * defines.DTUNE * dbase;
 
-            float prefix = (float)(pfVal * d_delta_dt * defines.TMP_WEIGHT + (1.0f - pfVal) * d_heaviside_dt * (2.0f - defines.TMP_WEIGHT)); // TODO WARNING casting double to float
+            float prefix = (float)(pfVal * d_delta_dt * defines.TMP_WEIGHT + (1.0f - pfVal) * d_heaviside_dt * (2.0f - defines.TMP_WEIGHT));
 
             ddt *= prefix;
 

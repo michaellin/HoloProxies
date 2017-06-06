@@ -102,12 +102,18 @@ namespace HoloProxies.Objects
                 // Save camera intrinsics matrix
                 CameraIntrinsics intrinsics = _Mapper.GetDepthCameraIntrinsics();
                 K = new Matrix4x4();
-                K.m00 = intrinsics.FocalLengthX; K.m01 = 0; K.m02 = intrinsics.PrincipalPointX;
-                K.m10 = 0; K.m11 = intrinsics.FocalLengthY; K.m12 = intrinsics.PrincipalPointY;
-                K.m20 = 0; K.m21 = 0; K.m22 = 1.0f;
-
+                K.m00 = intrinsics.FocalLengthX / defines.DOWNSAMPLE;
+                K.m01 = 0;
+                K.m02 = intrinsics.PrincipalPointX / defines.DOWNSAMPLE;
+                K.m10 = 0;
+                K.m11 = intrinsics.FocalLengthY / defines.DOWNSAMPLE;
+                K.m12 = intrinsics.PrincipalPointY / defines.DOWNSAMPLE;
+                K.m20 = 0; K.m21 = 0;
+                K.m22 = 1.0f;// / defines.DOWNSAMPLE;
+               
                 // TODO print K
-                //Debug.Log( "K = " + K );
+                Debug.Log( "K = " + K );
+                Debug.Log( " Width: " + Width + " Height: " + Height );
 
                 // Initialize color histogram
                 histogram = new ColorHistogram( defines.HISTOGRAM_NBIN, Width, Height );
@@ -171,9 +177,6 @@ namespace HoloProxies.Objects
                             // Unproject to 3D points in camera space (based on bounding box)
                             UnprojectFrom2Dto3D();
 
-                            Camera3DPoints = Camera3DPoints_full;
-
-                            // TODO
                             // Downsample all data frames if necessary
                             DownsampleAndFilterRGBDImage();
 
@@ -226,7 +229,6 @@ namespace HoloProxies.Objects
         }
 
         /// <summary>
-        /// TODO Need to update to use the downsampled version
         /// Gets 3D points [units = meters] and calculated pf vector
         /// </summary>
         /// <param name="state">State.</param>
@@ -237,7 +239,6 @@ namespace HoloProxies.Objects
         }
 
         /// <summary>
-        /// TODO Need to update to use the downsampled version
         /// Gets 3D points [units = meters] and calculated pf vector
         /// </summary>
         /// <param name="state">State.</param>
@@ -263,11 +264,7 @@ namespace HoloProxies.Objects
                     }
                     else // if it's inside the box
                     {
-                        //Debug.Log( PfVec[idx] );
-                        //Color tmp = GetColorFromData( idx );
-                        //PfVec[idx] = GetPf( GetColorFromData( idx ) );
                         PfVec[idx] = GetPf( ColorTexture.GetPixel( j, i ) );
-                        //if ( idx%100 == 0 && GetPf( GetColorFromData( idx )) >= 0) { Debug.Log( "hi2" ); }
                         if (drawBox)
                         {
                             ColorTextureVisual.SetPixel( j, i, Color.blue );
@@ -292,8 +289,6 @@ namespace HoloProxies.Objects
             histogram.BuildHistogram( ColorTexture, Mask );
         }
 
-        // TODO do we want to Downsample? Currently, this is only filtering 
-        // out pixels with <= 0 depth.
         /// <summary>
         /// Downsamples the image.
         /// </summary>
@@ -303,29 +298,31 @@ namespace HoloProxies.Objects
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    //filterDownsampleWithHoles( x, y ); TODO getting rid of downsampling
-                    ushort depthPixelIn = DepthData_full[x + y * Width];
-                    if (depthPixelIn == 0) {
-                        Mask[x + y * Width] = defines.HIST_USELESS_PIXEL;
-                    }
-                    ColorSpacePoint colorPt = ColorPoints_full[x +  y * DepthWidth];
-                    Debug.Log( ((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 );
-                    if (!float.IsInfinity( colorPt.X ) && !float.IsInfinity( colorPt.Y )
-                        && (colorPt.X > 0) && (colorPt.Y > 0)
-                        && (colorPt.X < ColorWidth) && (colorPt.Y < ColorHeight)) // only take positive depth and non-infinity values
-                    {
-                        ColorData[(x + y * Width) * 4] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4];
-                        ColorData[(x + y * Width) * 4 + 1] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 1];
-                        ColorData[(x + y * Width) * 4 + 2] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 2];
-                        ColorData[(x + y * Width) * 4 + 3] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 3];
-                    } else
-                    {
-                        Mask[x + y * Width] = defines.HIST_USELESS_PIXEL;
-                    }
+                    filterDownsampleWithHoles( x, y ); 
+                    
+                    //ushort depthPixelIn = DepthData_full[x + y * Width];
+                    //if (depthPixelIn == 0) {
+                    //    Mask[x + y * Width] = defines.HIST_USELESS_PIXEL;
+                    //}
+                    //ColorSpacePoint colorPt = ColorPoints_full[x +  y * DepthWidth];
+                    //Debug.Log( ((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 );
+                    //if (!float.IsInfinity( colorPt.X ) && !float.IsInfinity( colorPt.Y )
+                    //    && (colorPt.X > 0) && (colorPt.Y > 0)
+                    //    && (colorPt.X < ColorWidth) && (colorPt.Y < ColorHeight)) // only take positive depth and non-infinity values
+                    //{
+                    //    ColorData[(x + y * Width) * 4] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4];
+                    //    ColorData[(x + y * Width) * 4 + 1] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 1];
+                    //    ColorData[(x + y * Width) * 4 + 2] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 2];
+                    //    ColorData[(x + y * Width) * 4 + 3] = ColorData_full[((int)colorPt.X + (int)colorPt.Y * ColorWidth) * 4 + 3];
+                    //} else
+                    //{
+                    //    Mask[x + y * Width] = defines.HIST_USELESS_PIXEL;
+                    //}
+
                 }
             }
             //ColorData = ColorData_full;
-            DepthData = DepthData_full;
+            //DepthData = DepthData_full;
 
         }
 
@@ -340,6 +337,9 @@ namespace HoloProxies.Objects
             ColorSpacePoint colorPt;
             ushort[] tempColor = new ushort[3];
             tempColor[0] = 0; tempColor[1] = 0; tempColor[2] = 0;
+
+            // Downsample point cloud
+            Camera3DPoints[currX + currY * Width] = Camera3DPoints_full[inPosX + inPosY * DepthWidth];
 
             for (int x = 0; x < defines.DOWNSAMPLE; x++)
             {
@@ -376,6 +376,10 @@ namespace HoloProxies.Objects
             }
             else
             {
+                ColorData[(currX + currY * Width) * 4] = 0;
+                ColorData[(currX + currY * Width) * 4 + 1] = 0;
+                ColorData[(currX + currY * Width) * 4 + 2] = 0;
+                ColorData[(currX + currY * Width) * 4 + 3] = 255;
                 Mask[currX + currY * Width] = defines.HIST_USELESS_PIXEL;
             }
         }
@@ -385,12 +389,11 @@ namespace HoloProxies.Objects
             return new Color( ColorData[idx * 4], ColorData[idx * 4 + 1], ColorData[idx * 4 + 2], ColorData[idx * 4 + 3] );
         }
 
-        int ct = 0; // todo
         /// <summary>
         /// Gets the pf.
         /// </summary>
         /// <param name="pixel">Pixel.</param>
-        private float GetPf( Color pixel ) // TODO
+        private float GetPf( Color pixel )
         {
             int ru, gu, bu;
             int noBins = histogram.BinsNumber;
@@ -398,8 +401,7 @@ namespace HoloProxies.Objects
             gu = (int)((pixel.g) / ((float)noBins));
             bu = (int)((pixel.b) / ((float)noBins));
             int pidx = ru * noBins * noBins + gu * noBins + bu;
-            //if (ct++ % 100 == 0 && histogram.posterior[pidx] >= 0) { Debug.Log( histogram.posterior[pidx] ); } //TODO
-            //if (ct++ % 100 == 0 && histogram.posterior[pidx] >= 0) { Debug.Log( "hi" ); }
+
             return histogram.posterior[pidx];
         }
 
@@ -518,7 +520,7 @@ namespace HoloProxies.Objects
                     }
                 }
             }
-            ColorTextureVisual.Apply();
+            //ColorTextureVisual.Apply();
         }
 
         void OnApplicationQuit()

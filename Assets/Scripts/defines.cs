@@ -34,7 +34,7 @@ namespace HoloProxies.Utils
 		public const int BB_MARGIN = 2;
         public const int OUTSIDE_BB = -1;
 
-        public const int DOWNSAMPLE = 1; // remeber to scale K
+        public const int DOWNSAMPLE = 4; // remeber to scale K
 
     }
 }
