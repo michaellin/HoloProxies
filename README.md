@@ -1,7 +1,14 @@
 ## HoloProxies
 
-CS231A Final project by Michael Lin and Alexa Siu.
+CS231A/EE267 Final project by Michael Lin and Alexa Siu.
 
+What you will need for hardware:
+1. Microsoft HoloLens
+2. Microsoft Kinect
+3. A Windows machine
+
+If you are using a Windows machine you need to install the Kinect SDK:
+https://www.microsoft.com/en-us/download/details.aspx?id=44561
 
 There are three code components in this repository:
 1. HoloProxies which is the C# implementation of the real-time markerless tracking from Ren et al. This part of the code just runs in Unity platform in a PC with good processing capacity.
