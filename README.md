@@ -7,7 +7,7 @@ What you will need for hardware:
 2. Microsoft Kinect
 3. A Windows machine
 
-If you are using a Windows machine you need to install the Kinect SDK:
+In your Windows machine you need to install the Kinect SDK:
 https://www.microsoft.com/en-us/download/details.aspx?id=44561
 
 There are three code components in this repository:
