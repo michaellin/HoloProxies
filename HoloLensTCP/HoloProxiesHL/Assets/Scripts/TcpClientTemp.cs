@@ -142,10 +142,7 @@ public class TcpClientTemp : MonoBehaviour
         }
         else
         {
-            //Debug.Log("read something");
-            // If we succeeded read into H. Order matters. Row major.
-            //var a = "";
-            //a += socketDataReader.ReadString(1);
+            // Read from the stream all the entries of the transform Matrix H.
             H.m00 = socketDataReader.ReadSingle();
             H.m01 = socketDataReader.ReadSingle();
             H.m02 = socketDataReader.ReadSingle();
