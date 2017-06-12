@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.VR.WSA.Input;
 
+// ObjectAlign is used for the initial manual alignment where a alignment object (white box of the size of the Kinect V2)
+// floats in front of the user. As it is positioned to align with the Kinect, user can use keyboard press
+// to anchor the hologram. After this is done, the code will convert incoming stream of pose into the frame of reference
+// of the alignment object.
 public class ObjectAlign : MonoBehaviour {
 
     private bool anchored = false;
